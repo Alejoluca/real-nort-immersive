@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="description" content="Real Nort México — Experiencia inmersiva de propiedades de lujo en Tulum. Navegación cíclica infinita estilo galería de arte contemporánea." />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>Real Nort México · Experiencia Inmersiva</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --text: #f5f5f7;
+      --text-secondary: rgba(245,245,247,0.72);
+      --accent: #c9a87c;
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-display: 'Playfair Display', Georgia, serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+    .header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 1.35rem 2.5rem;
+      display: flex; justify-content: space-between; align-items: center;
+      background: linear-gradient(to bottom, rgba(10,10,10,0.92) 0%, transparent 100%);
+      backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    }
+    .logo {
+      font-weight: 500; font-size: 0.92rem; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--text); text-decoration: none;
+    }
+    .logo span { color: var(--accent); font-weight: 300; }
+    .header-right { display: flex; gap: 2.2rem; align-items: center; }
+    .header-link {
+      font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-secondary); text-decoration: none; transition: color 0.3s;
+    }
+    .header-link:hover { color: var(--text); }
+    .progress-rail {
+      position: fixed; right: 1.8rem; top: 50%; transform: translateY(-50%);
+      z-index: 90; display: flex; flex-direction: column; gap: 0.7rem;
+    }
+    .progress-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: rgba(255,255,255,0.22); transition: all 0.45s var(--ease); cursor: pointer;
+    }
+    .progress-dot.active {
+      background: var(--accent); transform: scale(1.7);
+      box-shadow: 0 0 14px rgba(201,168,124,0.55);
+    }
+    .gallery {
+      height: 100vh; overflow-y: scroll; scroll-snap-type: y mandatory;
+      scroll-behavior: smooth; -webkit-overflow-scrolling: touch;
+    }
+    .slide {
+      position: relative; width: 100%; height: 100vh;
+      scroll-snap-align: start; scroll-snap-stop: always;
+      overflow: hidden; display: flex; align-items: flex-end;
+    }
+    .slide-bg {
+      position: absolute; inset: 0;
+      background-size: cover; background-position: center;
+      transform: scale(1.08); transition: transform 1.9s var(--ease);
+      will-change: transform;
+    }
+    .slide.active .slide-bg { transform: scale(1); }
+    .slide-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 32%, rgba(0,0,0,0.18) 58%, transparent 100%);
+      pointer-events: none;
+    }
+    .slide-content {
+      position: relative; z-index: 10; width: 100%; max-width: 720px;
+      padding: 0 3rem 4.8rem; opacity: 0; transform: translateY(48px);
+      transition: opacity 0.95s var(--ease), transform 0.95s var(--ease);
+    }
+    .slide.active .slide-content { opacity: 1; transform: translateY(0); }
+    .slide-tag {
+      display: inline-block; font-size: 0.68rem; letter-spacing: 0.24em;
+      text-transform: uppercase; color: var(--accent); margin-bottom: 1rem; font-weight: 500;
+    }
+    .slide-title {
+      font-family: var(--font-display); font-weight: 500;
+      font-size: clamp(2.35rem, 5.4vw, 3.7rem); line-height: 1.07;
+      letter-spacing: -0.02em; margin-bottom: 1rem; color: #fff;
+    }
+    .slide-location {
+      font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 1.5rem; letter-spacing: 0.03em;
+    }
+    .slide-desc {
+      font-size: 1.05rem; line-height: 1.65; color: rgba(245,245,247,0.9);
+      max-width: 520px; margin-bottom: 1.85rem; font-weight: 300;
+    }
+    .slide-meta {
+      display: flex; flex-wrap: wrap; gap: 1.4rem 2.3rem; margin-bottom: 2.1rem;
+    }
+    .meta-item { display: flex; flex-direction: column; gap: 0.22rem; }
+    .meta-label {
+      font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase;
+      color: rgba(255,255,255,0.42);
+    }
+    .meta-value { font-size: 1.05rem; font-weight: 500; color: #fff; }
+    .meta-value.price { color: var(--accent); font-size: 1.18rem; }
+    .slide-cta {
+      display: inline-flex; align-items: center; gap: 0.65rem;
+      padding: 0.9rem 1.7rem; background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.22); border-radius: 100px;
+      color: #fff; font-size: 0.78rem; letter-spacing: 0.09em;
+      text-transform: uppercase; text-decoration: none;
+      backdrop-filter: blur(10px); transition: all 0.35s var(--ease);
+    }
+    .slide-cta:hover {
+      background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.42);
+      transform: translateY(-2px);
+    }
+    .slide-intro .slide-content { max-width: 820px; padding-bottom: 6.5rem; }
+    .intro-subtitle {
+      font-size: 1.15rem; font-weight: 300; color: rgba(255,255,255,0.78);
+      max-width: 500px; line-height: 1.6; margin-bottom: 2.6rem;
+    }
+    .scroll-hint {
+      position: absolute; bottom: 2.3rem; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 0.55rem;
+      color: rgba(255,255,255,0.5); font-size: 0.68rem; letter-spacing: 0.2em;
+      text-transform: uppercase; z-index: 20;
+      animation: pulse 2.5s ease-in-out infinite;
+    }
+    .scroll-hint svg { width: 17px; height: 17px; opacity: 0.7; }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; transform: translateX(-50%) translateY(0); }
+      50% { opacity: 0.95; transform: translateX(-50%) translateY(7px); }
+    }
+    .noise {
+      position: fixed; inset: 0; pointer-events: none; z-index: 50; opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    @media (max-width: 768px) {
+      .header { padding: 1rem 1.25rem; }
+      .progress-rail { right: 0.85rem; }
+      .slide-content { padding: 0 1.4rem 3.6rem; }
+      .slide-title { font-size: 2.05rem; }
+      .slide-meta { gap: 1rem 1.4rem; }
+      .header-right { gap: 1.1rem; }
+      .header-link { font-size: 0.68rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+  <header class="header">
+    <a href="#" class="logo">REAL <span>NORT</span></a>
+    <div class="header-right">
+      <a href="https://wa.me/52984144143" class="header-link" target="_blank" rel="noopener">WhatsApp</a>
+      <a href="https://wa.me/52984144143" class="header-link" target="_blank" rel="noopener">Contacto</a>
+    </div>
+  </header>
+  <nav class="progress-rail" id="progressRail" aria-label="Navegación de propiedades"></nav>
+  <main class="gallery" id="gallery">
+
+    <section class="slide slide-intro active" data-index="0">
+      <div class="slide-bg" style="background-image:url('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=2400&auto=format&fit=crop')"></div>
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <span class="slide-tag">Tulum · Riviera Maya</span>
+        <h1 class="slide-title">Propiedades que se sienten.</h1>
+        <p class="intro-subtitle">Una experiencia de navegación inmersiva. Desliza para recorrer cada espacio como en una galería de arte contemporánea. Del final vuelve al principio.</p>
+      </div>
+      <div class="scroll-hint">
+        <span>Desliza</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+      </div>
+    </section>
+
+    <section class="slide" data-index="1">
+      <div class="slide-bg" style="background-image:url('https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=2400&auto=format&fit=crop')"></div>
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <span class="slide-tag">Aldea Zama · Estudio</span>
+        <h2 class="slide-title">Estudio Kaan Zama</h2>
+        <p class="slide-location">Kaan Zama · Aldea Zama, Tulum</p>
+        <p class="slide-desc">Estudio totalmente equipado en el corazón de Aldea Zama. Rooftop con alberca de uso común, área de lavado y secado dos veces por semana. Ideal para quienes buscan eficiencia y ubicación premium.</p>
+        <div class="slide-meta">
+          <div class="meta-item"><span class="meta-label">Tipo</span><span class="meta-value">Estudio</span></div>
+          <div class="meta-item"><span class="meta-label">Incluye</span><span class="meta-value">WiFi · Agua · Mantenimiento</span></div>
+          <div class="meta-item"><span class="meta-label">Renta</span><span class="meta-value price">$9,000 MXN / mes + luz</span></div>
+        </div>
+        <a href="https://wa.me/52984144143?text=Hola%2C%20me%20interesa%20el%20Estudio%20Kaan%20Zama" class="slide-cta" target="_blank" rel="noopener">Consultar disponibilidad <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+      </div>
+    </section>
+
+    <section class="slide" data-index="2">
+      <div class="slide-bg" style="background-image:url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2400&auto=format&fit=crop')"></div>
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <span class="slide-tag">Aldea Zama · 2 Recámaras</span>
+        <h2 class="slide-title">Mareah Xa’an</h2>
+        <p class="slide-location">Condominio Mareah Xa’an · Aldea Zama</p>
+        <p class="slide-desc">Departamento de 2 recámaras completamente equipado. Cocina de gas, lavadora y secadora. Ubicado en uno de los desarrollos más consolidados de Aldea Zama.</p>
+        <div class="slide-meta">
+          <div class="meta-item"><span class="meta-label">Recámaras</span><span class="meta-value">2</span></div>
+          <div class="meta-item"><span class="meta-label">Incluye</span><span class="meta-value">Cuota · Agua · WiFi</span></div>
+          <div class="meta-item"><span class="meta-label">Renta</span><span class="meta-value price">$17,000 MXN / mes</span></div>
+        </div>
+        <a href="https://wa.me/52984144143?text=Hola%2C%20me%20interesa%20Mareah%20Xa%27an" class="slide-cta" target="_blank" rel="noopener">Consultar disponibilidad <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+      </div>
+    </section>
+
+    <section class="slide" data-index="3">
+      <div class="slide-bg" style="background-image:url('https://images.unsplash.com/photo-1613490493576-7fde63acd811?q=80&w=2400&auto=format&fit=crop')"></div>
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <span class="slide-tag">La Veleta · Villa</span>
+        <h2 class="slide-title">Villa Black & White</h2>
+        <p class="slide-location">La Veleta, Tulum</p>
+        <p class="slide-desc">Villa de 2 recámaras y 3 baños completos con jardín privado y pileta grande. Espacios amplios, excelente iluminación natural y acceso a amenidades: alberca en rooftop, gimnasio y coworking.</p>
+        <div class="slide-meta">
+          <div class="meta-item"><span class="meta-label">Recámaras</span><span class="meta-value">2 · 3 Baños</span></div>
+          <div class="meta-item"><span class="meta-label">Contrato</span><span class="meta-value">Mínimo 1 año</span></div>
+          <div class="meta-item"><span class="meta-label">Renta</span><span class="meta-value price">$25,000 MXN / mes</span></div>
+        </div>
+        <a href="https://wa.me/529844130144?text=Hola%2C%20me%20interesa%20la%20Villa%20Black%20%26%20White" class="slide-cta" target="_blank" rel="noopener">Consultar disponibilidad <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+      </div>
+    </section>
+
+    <section class="slide" data-index="4">
+      <div class="slide-bg" style="background-image:url('https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?q=80&w=2400&auto=format&fit=crop')"></div>
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <span class="slide-tag">Holistika · Villa de Autor</span>
+        <h2 class="slide-title">Villa Kaan</h2>
+        <p class="slide-location">Holistika · Calle sin salida, Tulum</p>
+        <p class="slide-desc">Diseñada por CO-LAB Design Office (AD100 Latinoamérica). Tres recámaras + oficina privada, 2.5 baños, piscina privada, terraza rooftop y jardín amurallado. Arquitectura donde el interior y el exterior se funden. Amueblada a medida por Casa Atica.</p>
+        <div class="slide-meta">
+          <div class="meta-item"><span class="meta-label">Recámaras</span><span class="meta-value">3 + Oficina</span></div>
+          <div class="meta-item"><span class="meta-label">Renta</span><span class="meta-value price">$40,000 MXN / mes</span></div>
+          <div class="meta-item"><span class="meta-label">Venta</span><span class="meta-value price">USD 490,000</span></div>
+        </div>
+        <a href="https://wa.me/52984144143?text=Hola%2C%20me%20interesa%20Villa%20Kaan" class="slide-cta" target="_blank" rel="noopener">Solicitar información <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+      </div>
+    </section>
+
+    <section class="slide" data-index="5">
+      <div class="slide-bg" style="background-image:url('https://images.unsplash.com/photo-1600047509807-ba8f99d2cd00?q=80&w=2400&auto=format&fit=crop')"></div>
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <span class="slide-tag">Art House Tulum · Colección</span>
+        <h2 class="slide-title">Art House Residences</h2>
+        <p class="slide-location">Tulum</p>
+        <p class="slide-desc">Colección de departamentos y estudios en Art House: desde plantas bajas de 2 habitaciones hasta penthouses y estudios en piso 4. Arquitectura contemporánea con acabados de alto nivel.</p>
+        <div class="slide-meta">
+          <div class="meta-item"><span class="meta-label">Opciones</span><span class="meta-value">1–2 Rec · Estudios · PH</span></div>
+          <div class="meta-item"><span class="meta-label">Estilo</span><span class="meta-value">Contemporáneo</span></div>
+        </div>
+        <a href="https://wa.me/52984144143?text=Hola%2C%20me%20interesan%20las%20opciones%20de%20Art%20House" class="slide-cta" target="_blank" rel="noopener">Ver disponibilidad <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+      </div>
+    </section>
+
+    <section class="slide" data-index="6">
+      <div class="slide-bg" style="background-image:url('https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=2400&auto=format&fit=crop')"></div>
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <span class="slide-tag">Aldea Zama · Oasis</span>
+        <h2 class="slide-title">Zama Oasis</h2>
+        <p class="slide-location">Aldea Zama, Tulum</p>
+        <p class="slide-desc">Residencias en Zama Oasis con opciones de 2 habitaciones y penthouses de 3. Espacios pensados para la vida tropical contemporánea: luz natural abundante y amenidades de comunidad.</p>
+        <div class="slide-meta">
+          <div class="meta-item"><span class="meta-label">Opciones</span><span class="meta-value">2H · Penthouse 3H</span></div>
+          <div class="meta-item"><span class="meta-label">Zona</span><span class="meta-value">Aldea Zama</span></div>
+        </div>
+        <a href="https://wa.me/52984144143?text=Hola%2C%20me%20interesa%20Zama%20Oasis" class="slide-cta" target="_blank" rel="noopener">Consultar <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+      </div>
+    </section>
+
+    <section class="slide" data-index="7">
+      <div class="slide-bg" style="background-image:url('https://images.unsplash.com/photo-1600607687644-c7171b42498f?q=80&w=2400&auto=format&fit=crop')"></div>
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <span class="slide-tag">Real Nort México</span>
+        <h2 class="slide-title">El recorrido continúa.</h2>
+        <p class="slide-location">Cada propiedad es una experiencia</p>
+        <p class="slide-desc">Has recorrido una selección curada de nuestras propiedades en Tulum. El scroll es infinito: al llegar al final vuelves al principio. Si alguna resonó contigo, escríbenos.</p>
+        <div class="slide-meta">
+          <div class="meta-item"><span class="meta-label">Contacto directo</span><span class="meta-value">WhatsApp 984 144 4143</span></div>
+        </div>
+        <a href="https://wa.me/52984144143" class="slide-cta" target="_blank" rel="noopener">Hablar con el equipo <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    gsap.registerPlugin(ScrollTrigger);
+    const gallery = document.getElementById('gallery');
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const progressRail = document.getElementById('progressRail');
+    let isResetting = false;
+    let currentIndex = 0;
+
+    slides.forEach((_, i) => {
+      const dot = document.createElement('div');
+      dot.className = 'progress-dot' + (i === 0 ? ' active' : '');
+      dot.addEventListener('click', () => slides[i].scrollIntoView({ behavior: 'smooth' }));
+      progressRail.appendChild(dot);
+    });
+    const dots = Array.from(progressRail.children);
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        const slide = entry.target;
+        const index = parseInt(slide.dataset.index);
+        if (entry.isIntersecting && entry.intersectionRatio > 0.55) {
+          slides.forEach(s => s.classList.remove('active'));
+          slide.classList.add('active');
+          currentIndex = index;
+          dots.forEach((d, i) => d.classList.toggle('active', i === index));
+        }
+      });
+    }, { threshold: [0.55] });
+    slides.forEach(slide => observer.observe(slide));
+
+    slides.forEach(slide => {
+      const bg = slide.querySelector('.slide-bg');
+      gsap.to(bg, {
+        yPercent: 14, ease: 'none',
+        scrollTrigger: { trigger: slide, scroller: gallery, start: 'top bottom', end: 'bottom top', scrub: true }
+      });
+    });
+
+    gallery.addEventListener('scroll', () => {
+      if (isResetting) return;
+      const scrollTop = gallery.scrollTop;
+      const maxScroll = gallery.scrollHeight - gallery.clientHeight;
+      if (scrollTop >= maxScroll - 50) {
+        isResetting = true;
+        gsap.to(gallery, {
+          opacity: 0.1, duration: 0.38, ease: 'power2.inOut',
+          onComplete: () => {
+            gallery.scrollTop = 0;
+            slides.forEach(s => s.classList.remove('active'));
+            slides[0].classList.add('active');
+            dots.forEach((d, i) => d.classList.toggle('active', i === 0));
+            currentIndex = 0;
+            gsap.to(gallery, { opacity: 1, duration: 0.5, ease: 'power2.out', onComplete: () => { isResetting = false; } });
+          }
+        });
+      }
+    }, { passive: true });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+        e.preventDefault();
+        const next = Math.min(currentIndex + 1, slides.length - 1);
+        slides[next].scrollIntoView({ behavior: 'smooth' });
+      }
+      if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+        e.preventDefault();
+        const prev = Math.max(currentIndex - 1, 0);
+        slides[prev].scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+
+    slides[0].classList.add('active');
+  </script>
+</body>
+</html>
