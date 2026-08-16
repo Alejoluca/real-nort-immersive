@@ -1,20 +1,23 @@
-# Real Nort México — Experiencia Inmersiva
+# Real Nort México — Experiencia Inmersiva Completa
 
-Landing page infinita cíclica estilo galería de arte para propiedades de lujo en Tulum.
+## Versión perfeccionada (local)
 
-## Live Demo (activar una sola vez)
+La versión final con **todas las propiedades**, paneles de detalle con más imágenes e información, y transiciones más limpias está en:
 
-**https://alejoluca.github.io/real-nort-immersive/**
+`artifacts/real-nort-immersive/index.html`
 
-Para activar GitHub Pages (30 segundos):
+Ábrela en el navegador para la experiencia completa.
 
-1. Abre: https://github.com/Alejoluca/real-nort-immersive/settings/pages
-2. Source → Deploy from a branch
-3. Branch: **main**  /  Folder: **/ (root)**
-4. Save
+## Live (GitHub Pages)
 
-La página queda online permanentemente.
+https://alejoluca.github.io/real-nort-immersive/
 
----
+(Activa Pages si aún no: Settings → Pages → main / root)
 
-Experiencia creada con navegación sensorial avanzada, scroll infinito cíclico y datos reales de Real Nort México.
+## Qué incluye la versión final
+
+- Scroll infinito cíclico de las propiedades destacadas
+- Botón **Todas las propiedades** → grid con el inventario completo (+80 propiedades de Real Nort + Departamentos Tulum)
+- Click en cualquier propiedad → panel de detalle con carrusel de imágenes + info + WhatsApp
+- Transiciones GSAP más suaves y limpias
+- Datos reales donde existían documentos
