@@ -4,72 +4,55 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <meta name="theme-color" content="#0a0a0a"/>
-<!-- Google Analytics 4
-     1. Crea una propiedad GA4 en https://analytics.google.com
-     2. Copia el Measurement ID (G-XXXXXXXX)
-     3. Pégalo abajo en RN_GA4_ID
-     Eventos: page_view, slide_view, open_grid, open_detail, detail_view,
-              wa_click, form_submit, form_error, filter, reach_contact, detail_image
--->
+<meta name="description" content="Real Nort México — Propiedades de lujo en Tulum: Aldea Zama, La Veleta, Holistika. Renta y venta. Experiencia inmersiva."/>
+<meta name="robots" content="index,follow"/>
+<meta name="geo.region" content="MX-ROO"/>
+<meta property="og:title" content="Real Nort México · Propiedades en Tulum"/>
+<meta property="og:description" content="Catálogo inmersivo. Fotos reales, WhatsApp, email y Facebook."/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://alejoluca.github.io/real-nort-immersive/"/>
+<meta property="og:locale" content="es_MX"/>
+<link rel="canonical" href="https://alejoluca.github.io/real-nort-immersive/"/>
+<title>Real Nort México · Propiedades de lujo en Tulum</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="preconnect" href="https://lh3.googleusercontent.com"/>
+<link rel="dns-prefetch" href="https://lh3.googleusercontent.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css"/>
 <script>
-  window.RN_GA4_ID = 'G-XXXXXXXXXX'; // ← REEMPLAZA con tu Measurement ID real
+  window.RN_GA4_ID = 'G-XXXXXXXXXX';
+  window.RN_EMAIL = 'alejolucatelli@gmail.com';
   window.dataLayer = window.dataLayer || [];
   function gtag(){ dataLayer.push(arguments); }
   window.gtag = gtag;
-
-  (function initGA4(){
+  (function(){
     var id = window.RN_GA4_ID;
-    if (!id || id.indexOf('XXXX') !== -1) {
-      console.info('[Real Nort] GA4 en espera: configura window.RN_GA4_ID con tu G-XXXXXXXX');
-      return;
-    }
+    if (!id || id.indexOf('XXXX') !== -1) return;
     var s = document.createElement('script');
     s.async = true;
     s.src = 'https://www.googletagmanager.com/gtag/js?id=' + id;
     document.head.appendChild(s);
     gtag('js', new Date());
-    gtag('config', id, {
-      send_page_view: true,
-      anonymize_ip: true,
-      cookie_flags: 'SameSite=None;Secure'
-    });
+    gtag('config', id, { send_page_view: true, anonymize_ip: true });
   })();
 </script>
-<meta name="description" content="Real Nort México — Inventario completo de propiedades de lujo en Tulum: Aldea Zama, La Veleta, Holistika y más. Renta y venta. Experiencia inmersiva."/>
-<meta name="keywords" content="propiedades Tulum, renta Tulum, venta Tulum, Aldea Zama, La Veleta, Real Nort, departamentos Tulum, villas Tulum"/>
-<meta name="robots" content="index,follow"/>
-<meta name="geo.region" content="MX-ROO"/>
-<meta name="geo.placename" content="Tulum"/>
-<meta property="og:title" content="Real Nort México · Propiedades en Tulum"/>
-<meta property="og:description" content="Recorre propiedades de lujo en Tulum. Catálogo completo, consulta directa por WhatsApp."/>
-<meta property="og:type" content="website"/>
-<meta property="og:url" content="https://alejoluca.github.io/real-nort-immersive/"/>
-<meta property="og:locale" content="es_MX"/>
-<meta name="twitter:card" content="summary_large_image"/>
-<meta name="twitter:title" content="Real Nort México · Propiedades en Tulum"/>
-<meta name="twitter:description" content="Experiencia inmersiva de propiedades en Tulum. Consulta por WhatsApp."/>
-<link rel="canonical" href="https://alejoluca.github.io/real-nort-immersive/"/>
-<title>Real Nort México · Propiedades de lujo en Tulum</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link rel="preconnect" href="https://images.unsplash.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="styles.css"/>
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"RealEstateAgent","name":"Real Nort México","url":"https://alejoluca.github.io/real-nort-immersive/","telephone":"+529843237592","address":{"@type":"PostalAddress","addressLocality":"Tulum","addressRegion":"Quintana Roo","addressCountry":"MX"},"areaServed":"Tulum, Playa del Carmen, Riviera Maya","sameAs":["https://www.instagram.com/alejo_lucatelli/","https://www.facebook.com/alejo.lucatelliperren"]},{"@type":"Organization","name":"Real Nort México","url":"https://alejoluca.github.io/real-nort-immersive/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"RealEstateAgent","name":"Real Nort México","url":"https://alejoluca.github.io/real-nort-immersive/","telephone":"+529843237592","email":"alejolucatelli@gmail.com","address":{"@type":"PostalAddress","addressLocality":"Tulum","addressRegion":"Quintana Roo","addressCountry":"MX"},"sameAs":["https://www.instagram.com/alejo_lucatelli/","https://www.facebook.com/alejo.lucatelliperren"]},{"@type":"Organization","name":"Real Nort México","url":"https://alejoluca.github.io/real-nort-immersive/"}]}</script>
 </head>
 <body>
 <header class="header">
-  <a href="#" class="logo" id="logoHome">REAL <span>NORT</span></a>
+  <a href="#" class="logo" id="logoHome" aria-label="Real Nort inicio">REAL <span>NORT</span></a>
   <div class="header-actions">
-    <button type="button" class="btn" id="btnAll">Todas las propiedades</button>
-    <a href="https://www.instagram.com/alejo_lucatelli/" class="btn" target="_blank" rel="noopener">Instagram</a>
-    <a href="https://wa.me/529843237592?text=Hola%2C%20vi%20la%20web%20de%20Real%20Nort%20y%20quiero%20informaci%C3%B3n" class="btn primary" target="_blank" rel="noopener">WhatsApp</a>
+    <button type="button" class="btn" id="btnAll">Todas</button>
+    <a class="btn" href="https://www.facebook.com/alejo.lucatelliperren" target="_blank" rel="noopener">Facebook</a>
+    <a class="btn" href="https://www.instagram.com/alejo_lucatelli/" target="_blank" rel="noopener">Instagram</a>
+    <a class="btn" id="btnEmail" href="#">Email</a>
+    <a class="btn primary" href="https://wa.me/529843237592?text=Hola%2C%20vi%20la%20web%20de%20Real%20Nort%20y%20quiero%20informaci%C3%B3n" target="_blank" rel="noopener">WhatsApp</a>
   </div>
 </header>
 <nav class="progress-rail" id="progressRail" aria-label="Progreso"></nav>
 <main class="gallery" id="gallery"></main>
-
-<div class="overlay" id="allOverlay">
+<div class="overlay" id="allOverlay" role="dialog" aria-modal="true">
   <div class="overlay-header">
     <div class="overlay-title">Todas las propiedades</div>
     <button type="button" class="overlay-close" id="allClose" aria-label="Cerrar">×</button>
@@ -77,8 +60,7 @@
   <div class="filter-bar" id="filterBar"></div>
   <div class="grid" id="propGrid"></div>
 </div>
-
-<div class="detail" id="detail">
+<div class="detail" id="detail" role="dialog" aria-modal="true">
   <div class="detail-top">
     <button type="button" class="btn" id="detailBack">← Volver</button>
     <button type="button" class="overlay-close" id="detailClose" aria-label="Cerrar">×</button>
@@ -93,7 +75,6 @@
     <div class="detail-nav" id="detailNav"></div>
   </div>
 </div>
-
 <script src="data.js"></script>
 <script src="app.js" defer></script>
 </body>
