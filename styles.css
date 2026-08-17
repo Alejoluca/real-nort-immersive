@@ -508,3 +508,26 @@ html{-webkit-text-size-adjust:100%}
 .btn:focus-visible,.cta:focus-visible,.filter-btn:focus-visible,.card:focus-visible{
   outline:2px solid rgba(201,168,124,.7);outline-offset:2px;
 }
+
+/* ═══ GOD MODE pins + polish ═══ */
+.rn-price-pin{
+  padding:4px 8px!important;
+  font:600 10px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,sans-serif!important;
+  letter-spacing:0!important;
+  border-radius:980px!important;
+  box-shadow:0 1px 3px rgba(0,0,0,.12),0 4px 12px rgba(0,0,0,.14)!important;
+  transform:translate(-50%,-100%)!important;
+  max-width:72px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.rn-price-pin::after{
+  width:7px!important;height:7px!important;bottom:-3px!important;
+}
+.rn-price-pin:hover,.rn-price-pin.active{
+  transform:translate(-50%,-100%) scale(1.1)!important;
+}
+.rn-price-pin.active{
+  background:#c9a87c!important;color:#0a0a0a!important;
+  box-shadow:0 4px 16px rgba(201,168,124,.4)!important;
+}
