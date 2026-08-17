@@ -1,1 +1,61 @@
-PLACEHOLDER
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="theme-color" content="#000000"/>
+<meta name="description" content="Real Nort México — Propiedades de lujo en Tulum, Aldea Zama, La Veleta y Amira."/>
+<meta property="og:title" content="Real Nort México"/>
+<meta property="og:description" content="Catálogo inmersivo de propiedades en Tulum."/>
+<title>Real Nort México · Tulum</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="preconnect" href="https://lh3.googleusercontent.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css?v=30"/>
+<script>window.RN_EMAIL='alejolucatelli@gmail.com';window.dataLayer=window.dataLayer||[];</script>
+</head>
+<body>
+<header class="header">
+  <a href="#" class="logo" id="logoHome">REAL <span>NORT</span></a>
+  <div class="header-actions">
+    <button type="button" class="btn" id="btnAll">Todas</button>
+    <a class="btn primary" href="https://wa.me/529843237592?text=Hola%2C%20vi%20Real%20Nort" target="_blank" rel="noopener">WhatsApp</a>
+  </div>
+</header>
+<nav class="progress-rail" id="progressRail"></nav>
+<main class="gallery" id="gallery"></main>
+<div class="overlay" id="allOverlay">
+  <div class="overlay-header">
+    <div class="overlay-title">Propiedades</div>
+    <div class="overlay-tools">
+      <button type="button" class="btn" id="btnViewGrid" aria-pressed="true">Grid</button>
+      <button type="button" class="btn" id="btnViewMap" aria-pressed="false">Mapa</button>
+      <button type="button" class="overlay-close" id="allClose" aria-label="Cerrar">×</button>
+    </div>
+  </div>
+  <div class="filter-bar" id="filterBar"></div>
+  <div class="catalog-body">
+    <div class="grid" id="propGrid"></div>
+    <div class="map-panel" id="mapPanel" hidden>
+      <div id="catalogMap" class="catalog-map"></div>
+      <p class="map-hint">Toca un pin</p>
+    </div>
+  </div>
+</div>
+<div class="detail" id="detail">
+  <div class="detail-top">
+    <button type="button" class="btn" id="detailBack">← Volver</button>
+    <div class="detail-counter" id="detailCounter"></div>
+    <button type="button" class="overlay-close" id="detailClose" aria-label="Cerrar">×</button>
+  </div>
+  <div class="detail-scroll" id="detailScroll">
+    <div class="detail-slides" id="detailSlides"></div>
+  </div>
+  <div class="detail-info" id="detailInfo"></div>
+  <nav class="detail-rail" id="detailRail"></nav>
+</div>
+<script src="data.js?v=30"></script>
+<script src="app.js?v=30"></script>
+</body>
+</html>
