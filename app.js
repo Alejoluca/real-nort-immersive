@@ -5,6 +5,8 @@ function waMsg(p){let t="Hola, vi *Real Nort México* y me interesa:\n\n*"+((p&&
 function emailMsg(p){return"mailto:"+EMAIL+"?subject="+encodeURIComponent("Consulta Real Nort")+"&body="+encodeURIComponent("Hola, me interesa "+((p&&p.name)||"propiedades en Tulum"))}
 function mapsUrl(p){return(p&&p.maps)||("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(((p&&p.name)||"")+", Tulum Mexico"))}
 
+
+/* ── Drive image size optimizer ── */
 function driveOpt(u,w){
   if(!u)return u;
   w=w||1200;
@@ -17,6 +19,10 @@ function safeImg(p,i,w){
   return driveOpt(u,w||1200);
 }
 
+/* ── Progressive lazy background loader ──
+   Ladder: tiny (w300) → medium (w700/w900) → full (w1400/w1600)
+   Only one active load chain per element. Uses decoding=async.
+*/
 function lazyBg(el,url,opts){
   if(!el||el.classList.contains("loaded")||el.dataset.loading==="1")return;
   el.dataset.loading="1";
@@ -48,6 +54,7 @@ function lazyBg(el,url,opts){
     el.dataset.loading="0";
   }
 
+  // Progressive: tiny → mid → full (only when element still needs it)
   if(tiny&&tiny!==full){
     load(tiny,false);
     if(mid&&mid!==full){
@@ -61,6 +68,7 @@ function lazyBg(el,url,opts){
   }
 }
 
+/* ── Shared IntersectionObserver for grid cards ── */
 let gridImgObs=null;
 function ensureGridObs(){
   if(gridImgObs)return gridImgObs;
@@ -122,6 +130,7 @@ function setupAfterBuild(){
     progressRail.appendChild(d);
   });
 
+  // Hero slides: aggressive prefetch (rootMargin large) + progressive
   gallery.querySelectorAll(".slide-bg[data-bg]").forEach(el=>{
     new IntersectionObserver((ents)=>{
       ents.forEach(e=>{
@@ -184,6 +193,7 @@ function openDetail(p){
   currentDetail=p;
   detailIdx=0;
   const rich=p;
+  // Use progressive sizes for detail: start mid, upgrade to full when visible
   detailImgs=((rich.images&&rich.images.length)?rich.images.slice():[safeImg(p,0,1400)]).map(u=>driveOpt(u,1400));
   const n=detailImgs.length;
   const slidesEl=document.getElementById("detailSlides");
@@ -211,9 +221,11 @@ function openDetail(p){
       detailIdx=i;
       rail.querySelectorAll(".detail-rail-dot").forEach((d,idx)=>d.classList.toggle("active",idx===i));
       if(counter)counter.textContent=(i+1)+" / "+n;
+      // Load current (high) + next two (medium priority)
       loadDetailImg(i,"high");
       loadDetailImg(i+1,"auto");
       loadDetailImg(i+2,"low");
+      // Also load previous if user might scroll back
       if(i>0)loadDetailImg(i-1,"low");
     });
   },{root:scrollEl,threshold:[.4]});
@@ -325,11 +337,13 @@ function renderGridFallback(){
     return;
   }
 
+  // CRITICAL: deferred covers — only data-bg, no inline background-image
   var html="";
   for(var i=0;i<filtered.length;i++){
     var p=filtered[i];
     var ni=(p.images&&p.images.length)||1;
     var src=(p.images&&p.images[0])||"";
+    // Store the base URL (no size) so lazyBg can choose sizes
     if(src.indexOf("lh3.googleusercontent.com/d/")!==-1)src=src.replace(/=w\d+.*/,"");
     var name=(p.name||"").replace(/</g,"");
     var loc=(p.loc||"Tulum").replace(/</g,"");
@@ -343,6 +357,7 @@ function renderGridFallback(){
   }
   grid.innerHTML=html;
 
+  // Observe cards for deferred loading
   const obs=ensureGridObs();
   grid.querySelectorAll(".card-photo[data-bg]").forEach(el=>obs.observe(el));
 
@@ -363,6 +378,6 @@ function tryBuild(){
 }
 if(!tryBuild()){
   window.__RN_ON_DATA=function(){tryBuild()};
-  setTimeout(function(){if(!tryBuild())buildGallery()},4000);
+  setTimeout(function(){if(!tryBuild())buildGallery()},3000);
 }
 })();
