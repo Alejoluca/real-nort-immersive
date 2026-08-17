@@ -13,8 +13,8 @@ var featured=[],allProperties=[];
     if(typeof window.__RN_ON_DATA==="function") window.__RN_ON_DATA();
   }
   Promise.all([
-    fetch("catalog-a.json?v=6").then(function(r){return r.json()}).catch(function(){return {}}),
-    fetch("catalog-b.json?v=6").then(function(r){return r.json()}).catch(function(){return {}}),
-    fetch("catalog-c.json?v=6").then(function(r){return r.json()}).catch(function(){return {}})
+    fetch("catalog-a.json?v=7").then(function(r){return r.json()}).catch(function(){return {}}),
+    fetch("catalog-b.json?v=7").then(function(r){return r.json()}).catch(function(){return {}}),
+    fetch("catalog-c.json?v=7").then(function(r){return r.json()}).catch(function(){return {}})
   ]).then(done);
 })();
