@@ -487,6 +487,10 @@ function setCatalogView(v){
     if(bm)bm.setAttribute("aria-pressed","true");
     // Leaflet needs layout after becoming visible
     requestAnimationFrame(function(){
+      var rail=document.getElementById("mapRail");
+      if(rail){rail.style.zIndex="20";rail.style.pointerEvents="auto";}
+      var cmap=document.getElementById("catalogMap");
+      if(cmap){cmap.style.zIndex="1";}
       ensureMap();
       updateMapMarkers(getFiltered());
       setTimeout(function(){
@@ -555,40 +559,27 @@ function renderGrid(){
   for(let i=0;i<filtered.length;i++){
     const p=filtered[i];
     const ni=(p.images&&p.images.length)||1;
-    var ss=coverSrcSet(p);
+    var src=coverImg(p,700);
     var eager=i<12;
-    var src=ss.src||coverImg(p,640);
-    html+='<article class="card" data-id="'+p.id+'" style="display:flex;flex-direction:column;overflow:hidden;background:#161616;border-radius:16px;border:1px solid rgba(255,255,255,.08)">';
-    /* padding-bottom aspect-ratio 3:2 — works on all browsers */
-    html+='<div class="card-photo'+(eager?" is-eager":"")+'" style="position:relative;width:100%;height:0;padding-bottom:66.666%;overflow:hidden;background:#1c1c1e;flex-shrink:0">';
-    html+='<span class="card-badge" style="position:absolute;left:10px;bottom:10px;z-index:2">'+ni+" fotos</span>";
-    if(src){
-      html+='<img class="card-img" alt="'+esc(p.name)+'" width="640" height="427" decoding="async" '+
-        (eager?'fetchpriority="high" loading="eager"':'loading="lazy"')+
-        ' src="'+src+'"'+(ss.srcset?' srcset="'+ss.srcset+'" sizes="'+ss.sizes+'"':'')+
-        ' style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block;border:0;opacity:1" />';
+    html+='<article class="card" data-id="'+p.id+'">';
+    if(eager&&src){
+      html+='<div class="card-photo loaded" style="background-image:url(\''+src+'\')"><span class="card-badge">'+ni+' fotos</span></div>';
+    }else{
+      var raw=(p.images&&p.images[coverIdx(p)])||"";
+      if(raw) raw=raw.replace(/=w\d+.*/,"");
+      html+='<div class="card-photo" data-bg="'+raw+'"><span class="card-badge">'+ni+' fotos</span></div>';
     }
-    html+="</div>";
-    html+='<div class="card-info" style="display:flex;flex-direction:column;gap:4px;padding:12px 14px 14px;flex:1 1 auto">';
-    html+='<p class="card-loc" style="margin:0;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#c9a87c;font-weight:600">'+esc(p.loc||"Tulum")+"</p>";
-    html+='<h3 class="card-title" style="margin:0;font-size:15px;line-height:1.25;color:#fff;font-weight:500">'+esc(p.name)+"</h3>";
-    html+='<p class="card-sub" style="margin:0;font-size:12px;color:rgba(245,245,247,.45)">'+esc(p.beds||"")+(ni>1?" · "+ni+" fotos":"")+"</p>";
-    html+='<div class="card-bottom" style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">';
-    html+='<span class="card-price" style="font-size:13px;font-weight:600;color:#c9a87c">'+esc(p.price||"Precio negociable")+"</span>";
-    html+='<span class="card-link" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(245,245,247,.4)">Ver</span>';
-    html+="</div></div></article>";
+    html+='<div class="card-info">';
+    html+='<p class="card-loc">'+esc(p.loc||"Tulum")+'</p>';
+    html+='<h3 class="card-title">'+esc(p.name)+'</h3>';
+    html+='<p class="card-sub">'+esc(p.beds||"")+(ni>1?" · "+ni+" fotos":"")+'</p>';
+    html+='<div class="card-bottom"><span class="card-price">'+esc(p.price||"Precio negociable")+'</span><span class="card-link">Ver</span></div>';
+    html+='</div></article>';
   }
   grid.innerHTML=html;
-
-  const obs=ensureGridObs();
+  var obs=ensureGridObs();
   grid.querySelectorAll(".card-photo[data-bg]").forEach(function(el){obs.observe(el)});
   for(var pi=0;pi<Math.min(filtered.length,14);pi++){prefetchImg(coverImg(filtered[pi],480));}
-  
-  grid.querySelectorAll(".card-img").forEach(function(img){
-    function done(){ img.classList.add("loaded"); if(img.parentNode) img.parentNode.classList.add("has-img"); }
-    if(img.complete && img.naturalWidth) done();
-    else { img.addEventListener("load", done, {once:true}); img.addEventListener("error", done, {once:true}); }
-  });
   grid.querySelectorAll(".card").forEach(function(card){
     card.onclick=function(){
       const p=findProp(card.getAttribute("data-id"));
