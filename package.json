@@ -1,0 +1,11 @@
+{
+  "name": "real-nort-immersive",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-data.mjs",
+    "sync": "node scripts/sync-drive.mjs",
+    "publish": "node scripts/publish.mjs",
+    "deploy": "node scripts/build-data.mjs && node scripts/publish.mjs"
+  }
+}
