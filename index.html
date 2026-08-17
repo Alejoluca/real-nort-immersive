@@ -4,6 +4,37 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <meta name="theme-color" content="#0a0a0a"/>
+<!-- Google Analytics 4
+     1. Crea una propiedad GA4 en https://analytics.google.com
+     2. Copia el Measurement ID (G-XXXXXXXX)
+     3. Pégalo abajo en RN_GA4_ID
+     Eventos: page_view, slide_view, open_grid, open_detail, detail_view,
+              wa_click, form_submit, form_error, filter, reach_contact, detail_image
+-->
+<script>
+  window.RN_GA4_ID = 'G-XXXXXXXXXX'; // ← REEMPLAZA con tu Measurement ID real
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  window.gtag = gtag;
+
+  (function initGA4(){
+    var id = window.RN_GA4_ID;
+    if (!id || id.indexOf('XXXX') !== -1) {
+      console.info('[Real Nort] GA4 en espera: configura window.RN_GA4_ID con tu G-XXXXXXXX');
+      return;
+    }
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + id;
+    document.head.appendChild(s);
+    gtag('js', new Date());
+    gtag('config', id, {
+      send_page_view: true,
+      anonymize_ip: true,
+      cookie_flags: 'SameSite=None;Secure'
+    });
+  })();
+</script>
 <meta name="description" content="Real Nort México — Inventario completo de propiedades de lujo en Tulum: Aldea Zama, La Veleta, Holistika y más. Renta y venta. Experiencia inmersiva."/>
 <meta name="keywords" content="propiedades Tulum, renta Tulum, venta Tulum, Aldea Zama, La Veleta, Real Nort, departamentos Tulum, villas Tulum"/>
 <meta name="robots" content="index,follow"/>
