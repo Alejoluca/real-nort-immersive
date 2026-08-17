@@ -124,8 +124,14 @@ function buildGallery(){
     gallery.innerHTML='<section class="slide active"><div class="slide-content" style="padding:4rem 2rem"><h1 class="slide-title">Cargando catálogo…</h1></div></section>';
     return;
   }
+  /* Carrusel inicial aleatorio cada visita */
+  var carousel=featured.slice();
+  for(var si=carousel.length-1;si>0;si--){
+    var sj=Math.floor(Math.random()*(si+1));
+    var tmp=carousel[si];carousel[si]=carousel[sj];carousel[sj]=tmp;
+  }
   const total=(allProperties&&allProperties.length)||featured.length;
-  const hero=safeImg(featured[0],0,1100);
+  const hero=safeImg(carousel[0],0,1100);
   let h='<section class="slide active" data-index="0">'+
     '<div class="slide-bg loaded" style="background-image:url(\''+hero+'\')"></div>'+
     '<div class="slide-overlay"></div>'+
@@ -138,7 +144,7 @@ function buildGallery(){
     '<a class="cta" href="'+waMsg({name:"Catálogo"})+'" target="_blank" rel="noopener">WhatsApp</a>'+
     '</div></div><div class="scroll-hint">Desliza</div></section>';
 
-  featured.forEach(function(p,i){
+  carousel.forEach(function(p,i){
     const n=(p.images&&p.images.length)||1;
     h+='<section class="slide" data-index="'+(i+1)+'" data-id="'+p.id+'">'+
       '<div class="slide-bg" data-bg="'+driveOpt(p.images[0],1000)+'"></div>'+
@@ -160,7 +166,7 @@ function buildGallery(){
 
   const last=featured.length+1;
   h+='<section class="slide" data-index="'+last+'">'+
-    '<div class="slide-bg" data-bg="'+safeImg(featured[0],1,1000)+'"></div>'+
+    '<div class="slide-bg" data-bg="'+safeImg(carousel[0],1,1000)+'"></div>'+
     '<div class="slide-overlay"></div>'+
     '<div class="slide-content" style="max-width:480px">'+
     '<span class="slide-tag">Contacto</span>'+
@@ -634,7 +640,7 @@ function updateMapMarkers(list){
   list.forEach(function(p){
     if(p.lat==null||p.lng==null)return;
     var label=p.pricePin||"·";
-    if(label.length>14)label=label.slice(0,14);
+    if(label.length>8)label=label.slice(0,8);
     var marker=L.marker([p.lat,p.lng],{
       icon:pricePinIcon(label,false),
       riseOnHover:true,
