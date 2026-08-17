@@ -292,7 +292,7 @@ function openDetail(p){
 
   var det=document.getElementById("detail");
   det.classList.add("open");
-  det.style.display="flex";
+  det.style.setProperty("display","flex","important");
   document.body.style.overflow="hidden";
   scrollEl.scrollTop=0;
 
@@ -334,7 +334,7 @@ function loadDetailImg(i,prio){
 
 function closeDetail(){
   var det=document.getElementById("detail");
-  if(det){det.classList.remove("open");det.style.display="none"}
+  if(det){det.classList.remove("open");det.style.setProperty("display","none","important")}
   document.body.style.overflow="";
   currentDetail=null;
   if(detailIo){try{detailIo.disconnect()}catch(e){} detailIo=null}
@@ -348,7 +348,7 @@ function openAll(){
     var ov=document.getElementById("allOverlay");
     if(!ov){console.error("allOverlay missing");return}
     ov.classList.add("open");
-    ov.style.display="flex";
+    ov.style.setProperty("display","flex","important");
     document.body.classList.add("catalog-open");
     document.body.style.overflow="hidden";
     renderGrid();
@@ -356,14 +356,14 @@ function openAll(){
   }catch(err){
     console.error("openAll",err);
     var ov=document.getElementById("allOverlay");
-    if(ov){ov.classList.add("open");ov.style.display="flex"}
+    if(ov){ov.classList.add("open");ov.style.setProperty("display","flex","important")}
   }
 }
 window.openAll=openAll;
 
 function closeAll(){
   var ov=document.getElementById("allOverlay");
-  if(ov){ov.classList.remove("open");ov.style.display="none"}
+  if(ov){ov.classList.remove("open");ov.style.setProperty("display","none","important")}
   document.body.classList.remove("catalog-open");
   document.body.style.overflow="";
   if(gridImgObs){try{gridImgObs.disconnect()}catch(e){} gridImgObs=null}
