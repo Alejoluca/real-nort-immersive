@@ -54,18 +54,49 @@ function lazyBg(el,url,opts){
     el.dataset.loading="0";
   }
 
-  // Progressive: tiny → mid → full (only when element still needs it)
-  if(tiny&&tiny!==full){
-    load(tiny,false);
-    if(mid&&mid!==full){
-      load(mid,false);
-      load(full,true);
-    }else{
-      load(full,true);
-    }
-  }else{
-    load(full,true);
+  // Progressive sequential: tiny → mid → full (no quality regression)
+  function chain(){
+    if(tiny&&tiny!==full){
+      const img=new Image();
+      img.decoding="async";
+      img.onload=function(){
+        if(el.dataset.loading!=="1")return;
+        el.style.backgroundImage="url('"+tiny+"')";
+        nextMid();
+      };
+      img.onerror=function(){nextMid()};
+      img.src=tiny;
+    }else nextMid();
   }
+  function nextMid(){
+    if(mid&&mid!==full){
+      const img=new Image();
+      img.decoding="async";
+      img.onload=function(){
+        if(el.dataset.loading!=="1")return;
+        el.style.backgroundImage="url('"+mid+"')";
+        nextFull();
+      };
+      img.onerror=function(){nextFull()};
+      img.src=mid;
+    }else nextFull();
+  }
+  function nextFull(){
+    const img=new Image();
+    img.decoding="async";
+    if(priority==="high")try{img.fetchPriority="high"}catch(e){}
+    img.onload=function(){
+      el.style.backgroundImage="url('"+full+"')";
+      el.classList.add("loaded");
+      el.dataset.loading="0";
+    };
+    img.onerror=function(){
+      el.classList.add("loaded");
+      el.dataset.loading="0";
+    };
+    img.src=full;
+  }
+  chain();
 }
 
 /* ── Shared IntersectionObserver for grid cards ── */
