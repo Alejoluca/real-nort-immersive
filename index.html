@@ -4,17 +4,14 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <meta name="theme-color" content="#0a0a0a"/>
-<meta name="description" content="Real Nort México — Catálogo inmersivo de propiedades de lujo en Tulum: Aldea Zama, La Veleta, Holistika y más. Fotos reales, precios claros, WhatsApp, email y Facebook."/>
+<meta name="description" content="Real Nort México — Propiedades de lujo en Tulum: Aldea Zama, La Veleta, Holistika y más. Renta y venta. Experiencia inmersiva."/>
 <meta name="robots" content="index,follow"/>
-<meta name="author" content="Real Nort México · Alejo Lucatelli"/>
 <meta name="geo.region" content="MX-ROO"/>
-<meta name="geo.placename" content="Tulum"/>
-<meta property="og:title" content="Real Nort México · Propiedades de lujo en Tulum"/>
-<meta property="og:description" content="Experiencia inmersiva: 90+ propiedades con fotos reales del inventario. Contacto directo por WhatsApp, email y Facebook."/>
+<meta property="og:title" content="Real Nort México · Propiedades en Tulum"/>
+<meta property="og:description" content="Catálogo inmersivo de propiedades en Tulum. Fotos reales, WhatsApp, email y Facebook."/>
 <meta property="og:type" content="website"/>
 <meta property="og:url" content="https://alejoluca.github.io/real-nort-immersive/"/>
 <meta property="og:locale" content="es_MX"/>
-<meta property="og:site_name" content="Real Nort México"/>
 <link rel="canonical" href="https://alejoluca.github.io/real-nort-immersive/"/>
 <title>Real Nort México · Propiedades de lujo en Tulum</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -68,17 +65,14 @@
 <div class="detail" id="detail" role="dialog" aria-modal="true">
   <div class="detail-top">
     <button type="button" class="btn" id="detailBack">← Volver</button>
+    <div class="detail-counter" id="detailCounter"></div>
     <button type="button" class="overlay-close" id="detailClose" aria-label="Cerrar">×</button>
   </div>
-  <div class="detail-gallery">
+  <div class="detail-scroll" id="detailScroll">
     <div class="detail-slides" id="detailSlides"></div>
-    <div class="detail-arrows">
-      <button type="button" id="detailPrev" aria-label="Anterior">‹</button>
-      <button type="button" id="detailNext" aria-label="Siguiente">›</button>
-    </div>
-    <div class="detail-info" id="detailInfo"></div>
-    <div class="detail-nav" id="detailNav"></div>
   </div>
+  <div class="detail-info" id="detailInfo"></div>
+  <nav class="detail-rail" id="detailRail" aria-label="Fotos"></nav>
 </div>
 <script src="data.js"></script>
 <script src="app.js" defer></script>
