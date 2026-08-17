@@ -204,17 +204,7 @@ body,button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
   display:block!important;
   background:#000;
 }
-#allOverlay #propGrid,
-#allOverlay .grid{
-  display:grid!important;
-  grid-template-columns:1fr!important;
-  gap:12px!important;
-  padding:12px 12px 100px!important;
-  overflow:visible!important;
-  height:auto!important;
-  min-height:0!important;
-  background:#000!important;
-}
+/* removed single-column force */
 @media(min-width:640px){
   #allOverlay #propGrid,#allOverlay .grid{grid-template-columns:repeat(2,1fr)!important;gap:16px!important;padding:16px 16px 100px!important}
 }
@@ -1184,25 +1174,7 @@ body{
 }
 
 /* THE ratio lock: padding-bottom only — ignore aspect-ratio conflicts */
-#propGrid .card-photo{
-  display:block!important;
-  position:relative!important;
-  width:100%!important;
-  height:0!important;
-  padding:0 0 66.666% 0!important;
-  margin:0!important;
-  overflow:hidden!important;
-  background-color:#1c1c1e!important;
-  background-size:cover!important;
-  background-position:center center!important;
-  background-repeat:no-repeat!important;
-  min-height:0!important;
-  max-height:none!important;
-  aspect-ratio:auto!important;
-  flex:none!important;
-  contain:none!important;
-  content-visibility:visible!important;
-}
+/* removed height:0 card-photo */
 #propGrid .card-photo::before,
 #propGrid .card-photo::after{content:none!important;display:none!important}
 #propGrid .card-photo .card-img{display:none!important}
@@ -1516,3 +1488,120 @@ body{
   white-space: nowrap !important;
 }
 #propGrid .card-title{ white-space: normal !important; display: -webkit-box !important; -webkit-line-clamp: 2 !important; -webkit-box-orient: vertical !important; }
+
+/* ════════════════════════════════════════════
+   v59 — CSS Grid auto-flow + Container Queries
+   gap shorthand correct: gap: <row> <column> OR gap: <both>
+   ════════════════════════════════════════════ */
+#allOverlay .catalog-body{
+  container-type: inline-size;
+  container-name: catalog;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+#allOverlay #propGrid.grid:not([hidden]),
+#allOverlay #propGrid:not([hidden]){
+  display: grid !important;
+  grid-auto-flow: row !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  grid-auto-rows: auto !important;
+  gap: 18px 14px !important; /* row | column */
+  align-items: start !important;
+  justify-items: stretch !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 14px !important;
+  margin: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  background: #000 !important;
+}
+
+@container catalog (min-width: 560px){
+  #allOverlay #propGrid:not([hidden]){
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 20px 16px !important;
+  }
+}
+@container catalog (min-width: 800px){
+  #allOverlay #propGrid:not([hidden]){
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 22px 18px !important;
+  }
+}
+@container catalog (min-width: 1100px){
+  #allOverlay #propGrid:not([hidden]){
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 24px 20px !important;
+  }
+}
+
+/* Fallback without container queries */
+@media (min-width: 900px){
+  #allOverlay #propGrid:not([hidden]){
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 22px 18px !important;
+  }
+}
+@media (min-width: 1200px){
+  #allOverlay #propGrid:not([hidden]){
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 24px 20px !important;
+  }
+}
+
+#allOverlay #propGrid .card{
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: auto !important;
+  margin: 0 !important;
+  background: #161616 !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(255,255,255,.1) !important;
+  box-sizing: border-box !important;
+  contain: none !important;
+  content-visibility: visible !important;
+  transform: none !important;
+}
+
+#allOverlay #propGrid .card-photo{
+  display: block !important;
+  width: 100% !important;
+  height: 160px !important;
+  min-height: 160px !important;
+  max-height: 160px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  aspect-ratio: auto !important;
+  background-color: #1c1c1e !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  position: relative !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+#allOverlay #propGrid .card-info{
+  display: block !important;
+  padding: 10px 12px 12px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  background: #161616 !important;
+}
+
+#allOverlay #propGrid .card-badge{
+  position: absolute !important;
+  left: 8px !important;
+  bottom: 8px !important;
+  top: auto !important;
+  z-index: 2 !important;
+}
