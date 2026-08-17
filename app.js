@@ -377,17 +377,41 @@ function setCatalogView(v){
   const bg=document.getElementById("btnViewGrid");
   const bm=document.getElementById("btnViewMap");
   if(v==="map"){
-    if(grid)grid.hidden=true;
-    if(map)map.hidden=false;
+    if(grid){
+      grid.hidden=true;
+      grid.setAttribute("hidden","");
+      grid.style.setProperty("display","none","important");
+    }
+    if(map){
+      map.hidden=false;
+      map.removeAttribute("hidden");
+      map.style.setProperty("display","flex","important");
+    }
     if(bg)bg.setAttribute("aria-pressed","false");
     if(bm)bm.setAttribute("aria-pressed","true");
-    ensureMap();
-    updateMapMarkers(getFiltered());
+    // Leaflet needs layout after becoming visible
+    requestAnimationFrame(function(){
+      ensureMap();
+      updateMapMarkers(getFiltered());
+      setTimeout(function(){
+        if(catalogMap){try{catalogMap.invalidateSize(true)}catch(e){}}
+        updateMapMarkers(getFiltered());
+      },200);
+    });
   }else{
-    if(grid){grid.hidden=false;grid.style.display="grid"}
-    if(map)map.hidden=true;
+    if(map){
+      map.hidden=true;
+      map.setAttribute("hidden","");
+      map.style.setProperty("display","none","important");
+    }
+    if(grid){
+      grid.hidden=false;
+      grid.removeAttribute("hidden");
+      grid.style.setProperty("display","grid","important");
+    }
     if(bg)bg.setAttribute("aria-pressed","true");
     if(bm)bm.setAttribute("aria-pressed","false");
+    closeMapSheet();
   }
 }
 
@@ -464,6 +488,39 @@ function renderGrid(){
 }
 window.renderGrid=renderGrid;
 
+
+function closeMapSheet(){
+  var s=document.getElementById("mapSheet");
+  if(s){s.classList.remove("open");s.innerHTML=""}
+}
+function showMapSheet(p){
+  var s=document.getElementById("mapSheet");
+  if(!s||!p)return;
+  var img=(p.images&&p.images[0])?driveOpt(p.images[0],700):"";
+  var n=(p.images&&p.images.length)||0;
+  s.innerHTML=
+    '<div class="sheet-inner">'+
+      '<div class="sheet-photo"'+(img?' style="background-image:url(\''+img+'\')"':'')+'></div>'+
+      '<div class="sheet-body">'+
+        '<div class="sheet-loc">'+esc(p.loc||"Tulum")+'</div>'+
+        '<div class="sheet-title">'+esc(p.name)+'</div>'+
+        '<div class="sheet-meta">'+esc(p.beds||"")+(n?(" · "+n+" fotos"):"")+'</div>'+
+        '<div class="sheet-price">'+esc(p.price||"Precio negociable")+'</div>'+
+        '<div class="sheet-actions">'+
+          '<button type="button" class="cta gold" id="sheetOpen">Ver galería</button>'+
+          '<a class="cta" href="'+waMsg(p)+'" target="_blank" rel="noopener">WhatsApp</a>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  s.classList.add("open");
+  var btn=document.getElementById("sheetOpen");
+  if(btn)btn.onclick=function(){closeAll();openDetail(p)};
+  // also tap photo
+  var ph=s.querySelector(".sheet-photo");
+  if(ph)ph.onclick=function(){closeAll();openDetail(p)};
+  if(catalogMap)setTimeout(function(){try{catalogMap.invalidateSize(true)}catch(e){}},80);
+}
+
 function ensureMap(){
   if(typeof L==="undefined"){console.warn("Leaflet missing");return}
   const el=document.getElementById("catalogMap");
@@ -514,13 +571,11 @@ function renderMapRail(list){
     card.onclick=function(){
       var p=findProp(card.getAttribute("data-id"));
       if(!p)return;
-      // highlight pin + fly
       highlightMapProp(p.id);
+      showMapSheet(p);
       if(p.lat!=null&&catalogMap){
-        catalogMap.flyTo([p.lat,p.lng],15,{duration:.6});
+        try{catalogMap.flyTo([p.lat,p.lng],15,{duration:.55})}catch(e){}
       }
-      // open detail after brief pause for context
-      setTimeout(function(){closeAll();openDetail(p)},280);
     };
   });
 }
@@ -556,15 +611,13 @@ function updateMapMarkers(list){
     var marker=L.marker([p.lat,p.lng],{icon:icon,riseOnHover:true}).addTo(catalogMap);
     marker.on("click",function(){
       highlightMapProp(p.id);
+      showMapSheet(p);
       var rail=document.getElementById("mapRail");
       if(rail){
         var card=rail.querySelector('.map-card[data-id="'+p.id+'"]');
         if(card)card.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"});
       }
-      // second tap / small delay open detail
-      marker.__rnTaps=(marker.__rnTaps||0)+1;
-      if(marker.__rnTaps>=2){closeAll();openDetail(p);marker.__rnTaps=0}
-      else setTimeout(function(){marker.__rnTaps=0},600);
+      if(p.lat!=null)try{catalogMap.panTo([p.lat,p.lng],{animate:true})}catch(e){}
     });
     mapMarkers.push({id:p.id,marker:marker,label:label});
     bounds.push([p.lat,p.lng]);
