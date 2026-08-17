@@ -162,3 +162,82 @@ body,button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .overlay.open .grid,#propGrid{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;min-height:0}
 /* Leaflet touch */
 .leaflet-container{touch-action:pan-x pan-y}
+
+/* ═══ BULLETPROOF CATALOG OVERLAY ═══ */
+#allOverlay.overlay{
+  position:fixed!important;
+  inset:0!important;
+  z-index:9999!important;
+  background:#000!important;
+  display:none!important;
+  flex-direction:column!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  visibility:visible!important;
+}
+#allOverlay.overlay.open{
+  display:flex!important;
+}
+#allOverlay .overlay-header{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:max(12px,env(safe-area-inset-top)) 16px 12px;
+  border-bottom:1px solid rgba(255,255,255,.1);
+  background:#000;
+}
+#allOverlay .filter-bar{
+  flex:0 0 auto;
+  padding:10px 16px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  background:#000;
+}
+#allOverlay .catalog-body{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  overflow:auto!important;
+  -webkit-overflow-scrolling:touch!important;
+  display:block!important;
+  background:#000;
+}
+#allOverlay #propGrid,
+#allOverlay .grid{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:12px!important;
+  padding:12px 12px 100px!important;
+  overflow:visible!important;
+  height:auto!important;
+  min-height:0!important;
+  background:#000!important;
+}
+@media(min-width:640px){
+  #allOverlay #propGrid,#allOverlay .grid{grid-template-columns:repeat(2,1fr)!important;gap:16px!important;padding:16px 16px 100px!important}
+}
+@media(min-width:1024px){
+  #allOverlay #propGrid,#allOverlay .grid{grid-template-columns:repeat(3,1fr)!important}
+}
+#allOverlay .card{
+  display:flex!important;
+  flex-direction:column!important;
+  background:#161616!important;
+  border-radius:16px!important;
+  overflow:hidden!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  cursor:pointer!important;
+}
+#allOverlay .card-photo{
+  width:100%!important;
+  aspect-ratio:4/3!important;
+  background-color:#1a1a1a!important;
+  background-size:cover!important;
+  background-position:center!important;
+  position:relative!important;
+  min-height:140px!important;
+}
+#allOverlay .card-info{padding:12px 14px 14px!important}
+#allOverlay .map-panel[hidden]{display:none!important}
+
+#detail.detail{display:none!important;z-index:10000!important}
+#detail.detail.open{display:flex!important;flex-direction:column!important;opacity:1!important;pointer-events:auto!important}
