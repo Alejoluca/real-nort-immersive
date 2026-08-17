@@ -11,21 +11,20 @@ var featured=[],allProperties=[];
     if(!pool.length){if(typeof window.__RN_ON_DATA==="function")window.__RN_ON_DATA();return}
     function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
     shuffle(pool);
-    var n=Math.min(pool.length,6+Math.floor(Math.random()*3));
-    featured=pool.slice(0,n);
+    featured=pool.slice(0,Math.min(pool.length,7));
     allProperties=pool;
     if(typeof window.__RN_ON_DATA==="function")window.__RN_ON_DATA();
   }
   function loadScript(src,cb){
     var s=document.createElement("script");
-    s.src=src+"?v=28";s.async=true;s.onload=cb;s.onerror=cb;
+    s.src=src+"?v=29";s.async=true;s.onload=cb;s.onerror=cb;
     document.head.appendChild(s);
   }
-  var done=0,need=4;
-  function tick(){done++;if(done>=need)go()}
+  var done=0;
+  function tick(){done++;if(done>=4)go()}
   loadScript("part1.js",tick);
   loadScript("part2.js",tick);
   loadScript("part3.js",tick);
   loadScript("part4.js",tick);
-  setTimeout(function(){if(done<need)go()},3500);
+  setTimeout(function(){if(done<4)go()},4000);
 })();
