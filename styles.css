@@ -509,25 +509,35 @@ html{-webkit-text-size-adjust:100%}
   outline:2px solid rgba(201,168,124,.7);outline-offset:2px;
 }
 
-/* ═══ GOD MODE pins + polish ═══ */
-.rn-price-pin{
-  padding:4px 8px!important;
-  font:600 10px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,sans-serif!important;
-  letter-spacing:0!important;
-  border-radius:980px!important;
-  box-shadow:0 1px 3px rgba(0,0,0,.12),0 4px 12px rgba(0,0,0,.14)!important;
-  transform:translate(-50%,-100%)!important;
-  max-width:72px!important;
-  overflow:hidden!important;
-  text-overflow:ellipsis!important;
+
+/* ═══ AESTHETIC PINS v52 ═══ */
+.rn-marker{background:transparent!important;border:none!important}
+.rn-price-pin,
+.rn-dot-pin{
+  width:14px!important;height:14px!important;padding:0!important;
+  border-radius:50%!important;
+  background:#fff!important;
+  border:2px solid #111!important;
+  box-shadow:0 2px 8px rgba(0,0,0,.28),0 0 0 1px rgba(255,255,255,.35)!important;
+  transform:translate(-50%,-50%)!important;
+  font-size:0!important;line-height:0!important;color:transparent!important;
+  overflow:hidden!important;text-indent:-999px!important;
+  max-width:14px!important;
+  transition:transform .18s cubic-bezier(.25,.1,.25,1),background .18s,box-shadow .18s,border-color .18s!important;
+  cursor:pointer!important;
 }
-.rn-price-pin::after{
-  width:7px!important;height:7px!important;bottom:-3px!important;
+.rn-price-pin::after,
+.rn-dot-pin::after{display:none!important;content:none!important}
+.rn-price-pin:hover,
+.rn-dot-pin:hover{
+  transform:translate(-50%,-50%) scale(1.25)!important;
+  background:#c9a87c!important;border-color:#fff!important;
+  box-shadow:0 4px 14px rgba(201,168,124,.5)!important;
 }
-.rn-price-pin:hover,.rn-price-pin.active{
-  transform:translate(-50%,-100%) scale(1.1)!important;
-}
-.rn-price-pin.active{
-  background:#c9a87c!important;color:#0a0a0a!important;
-  box-shadow:0 4px 16px rgba(201,168,124,.4)!important;
+.rn-price-pin.active,
+.rn-dot-pin.active{
+  width:18px!important;height:18px!important;
+  background:#c9a87c!important;border:2.5px solid #fff!important;
+  transform:translate(-50%,-50%) scale(1.15)!important;
+  box-shadow:0 0 0 6px rgba(201,168,124,.28),0 6px 18px rgba(0,0,0,.25)!important;
 }
