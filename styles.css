@@ -102,3 +102,63 @@
   .card-title{font-size:13px}
   .card-sub{font-size:11px}
 }
+
+/* ═══ Cross-device / all systems ═══ */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body,button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.gallery,.catalog-body,.grid,#propGrid,.detail-scroll,.overlay{
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+/* iOS viewport stability: prefer dvh, fallback vh, then fill-available */
+.gallery,.slide,.detail-slide{
+  min-height:100vh;
+  min-height:100dvh;
+  min-height:-webkit-fill-available;
+}
+.header{
+  padding-top:max(0px,env(safe-area-inset-top));
+  height:calc(52px + env(safe-area-inset-top));
+  padding-left:max(14px,env(safe-area-inset-left));
+  padding-right:max(14px,env(safe-area-inset-right));
+}
+.overlay-header,.detail-top,.filter-bar{
+  padding-left:max(16px,env(safe-area-inset-left));
+  padding-right:max(16px,env(safe-area-inset-right));
+}
+.detail-info{
+  padding-bottom:calc(28px + env(safe-area-inset-bottom));
+  padding-left:max(16px,env(safe-area-inset-left));
+}
+.slide-content{
+  padding-left:max(18px,env(safe-area-inset-left));
+  padding-right:max(18px,env(safe-area-inset-right));
+}
+.progress-rail,.detail-rail{
+  right:max(10px,env(safe-area-inset-right));
+}
+/* Touch targets ≥44px */
+.cta,.btn,.overlay-close,.filter-btn{min-height:44px}
+.progress-dot,.detail-rail-dot{min-width:12px;min-height:12px;padding:4px}
+/* Hover only where real hover exists */
+@media(hover:none){
+  .card:hover{transform:none;box-shadow:none}
+  .card:active{transform:scale(.985);opacity:.96}
+  .btn:hover{color:var(--secondary);border-color:var(--line-strong)}
+}
+/* Reduced motion */
+@media(prefers-reduced-motion:reduce){
+  .card-photo:not(.loaded){animation:none}
+  .slide-bg{transition:opacity .2s ease;transform:none!important}
+}
+/* Android Chrome address bar / desktop large screens */
+@supports not (height:100dvh){
+  .gallery,.slide,.detail-slide{height:100vh}
+}
+/* Prevent image drag ghost on desktop */
+.card-photo,.slide-bg,.detail-slide{-webkit-user-drag:none;user-select:none}
+/* Grid scroll must work inside overlay on all browsers */
+.overlay.open .catalog-body{overflow:hidden;display:flex;flex-direction:column;flex:1;min-height:0}
+.overlay.open .grid,#propGrid{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;min-height:0}
+/* Leaflet touch */
+.leaflet-container{touch-action:pan-x pan-y}
