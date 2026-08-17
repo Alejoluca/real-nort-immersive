@@ -1659,6 +1659,7 @@ body{
 .rn-card{
   display: flex !important;
   flex-direction: column !important;
+  min-height: 252px !important;
   width: 100% !important;
   min-width: 0 !important;
   margin: 0 !important;
@@ -1675,10 +1676,10 @@ body{
 .rn-card-media{
   display: block !important;
   width: 100% !important;
-  height: 160px !important;
-  min-height: 160px !important;
-  max-height: 160px !important;
-  flex: 0 0 160px !important;
+  height: 180px !important;
+  min-height: 180px !important;
+  max-height: 180px !important;
+  flex: 0 0 180px !important;
   margin: 0 !important;
   padding: 0 !important;
   background-color: #1c1c1e !important;
