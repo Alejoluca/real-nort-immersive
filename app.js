@@ -589,8 +589,24 @@ function renderGrid(){
     html+='</div></article>';
   }
   grid.innerHTML=html;
-  /* Layout forced by rn-grid CSS — clean classes */
   grid.className = "rn-grid";
+  grid.style.cssText = "display:grid;grid-auto-flow:row;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:14px;width:100%;box-sizing:border-box;align-items:start;overflow-y:auto;";
+  if(window.matchMedia && window.matchMedia("(min-width:900px)").matches){
+    grid.style.gridTemplateColumns = "repeat(3, minmax(0, 1fr))";
+  }
+  if(window.matchMedia && window.matchMedia("(min-width:1200px)").matches){
+    grid.style.gridTemplateColumns = "repeat(4, minmax(0, 1fr))";
+  }
+  grid.querySelectorAll(".rn-card").forEach(function(card){
+    card.style.cssText = "display:flex;flex-direction:column;width:100%;min-width:0;background:#161616;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);margin:0;";
+  });
+  grid.querySelectorAll(".rn-card-media").forEach(function(el){
+    var bg = el.style.backgroundImage || "";
+    el.style.cssText = "display:block;width:100%;height:180px;min-height:180px;max-height:180px;flex:0 0 180px;background-color:#1c1c1e;background-size:cover;background-position:center;background-repeat:no-repeat;margin:0;padding:0;" + (bg ? "background-image:"+bg+";" : "");
+  });
+  grid.querySelectorAll(".rn-card-body").forEach(function(el){
+    el.style.cssText = "display:flex;flex-direction:column;gap:4px;padding:12px 14px 14px;flex:1 1 auto;min-height:72px;";
+  });
   var obs=ensureGridObs();
   grid.querySelectorAll(".rn-card-media[data-bg]").forEach(function(el){obs.observe(el)});
   for(var pi=0;pi<Math.min(filtered.length,14);pi++){prefetchImg(coverImg(filtered[pi],480));}
