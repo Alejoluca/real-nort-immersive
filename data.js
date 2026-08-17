@@ -17,7 +17,7 @@ var featured=[],allProperties=[];
     if(typeof window.__RN_ON_DATA==="function")window.__RN_ON_DATA();
   }
   urls.forEach(function(url){
-    fetch(url+"?v=35")
+    fetch(url+"?v=36")
       .then(function(r){if(!r.ok)throw new Error(r.status);return r.json()})
       .then(function(d){
         if(d.featured&&d.featured.length)collected.featured=d.featured;
