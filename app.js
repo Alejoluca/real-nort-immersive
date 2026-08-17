@@ -32,16 +32,16 @@ const io=new IntersectionObserver((ents)=>{ents.forEach(en=>{if(!en.isIntersecti
 slides().forEach(s=>io.observe(s));
 gallery.addEventListener("wheel",e=>{if(wheelLock){e.preventDefault();return}if(Math.abs(e.deltaY)<12)return;e.preventDefault();const list=slides(),dir=e.deltaY>0?1:-1,n=Math.max(0,Math.min(list.length-1,currentIndex+dir));if(n===currentIndex)return;wheelLock=true;list[n].scrollIntoView({behavior:"smooth",block:"start"});setTimeout(()=>wheelLock=false,700)},{passive:false});
 document.getElementById("logoHome").onclick=e=>{e.preventDefault();gallery.scrollTo({top:0,behavior:"smooth"})};
-document.getElementById("btnAll").onclick=()=>openAll();
-document.getElementById("allClose").onclick=()=>closeAll();
+document.getElementById("btnAll").onclick=()=>window.openAll();
+document.getElementById("allClose").onclick=()=>window.closeAll();
 const bg=document.getElementById("btnViewGrid"),bm=document.getElementById("btnViewMap");
 if(bg)bg.onclick=()=>setCatalogView("grid");if(bm)bm.onclick=()=>setCatalogView("map");
 const be=document.getElementById("btnEmail");if(be){be.href=emailMsg(null)}
-["btnAllIntro","btnAllEnd"].forEach(id=>{const el=document.getElementById(id);if(el)el.onclick=()=>openAll()});
+["btnAllIntro","btnAllEnd"].forEach(id=>{const el=document.getElementById(id);if(el)el.onclick=()=>window.openAll()});
 gallery.onclick=e=>{const o=e.target.closest("[data-open]");if(o){const p=findProp(o.getAttribute("data-open"));if(p)openDetail(p)}};
 document.getElementById("detailBack").onclick=closeDetail;
 document.getElementById("detailClose").onclick=closeDetail;
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(document.getElementById("detail").classList.contains("open"))closeDetail();else if(document.getElementById("allOverlay").classList.contains("open"))closeAll()}if(document.getElementById("detail").classList.contains("open")){if(e.key==="ArrowDown"||e.key==="ArrowRight"){e.preventDefault();detailNav(1)}if(e.key==="ArrowUp"||e.key==="ArrowLeft"){e.preventDefault();detailNav(-1)}}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(document.getElementById("detail").classList.contains("open"))closeDetail();else if(document.getElementById("allOverlay").classList.contains("open"))window.closeAll()}if(document.getElementById("detail").classList.contains("open")){if(e.key==="ArrowDown"||e.key==="ArrowRight"){e.preventDefault();detailNav(1)}if(e.key==="ArrowUp"||e.key==="ArrowLeft"){e.preventDefault();detailNav(-1)}}});
 const ds=document.getElementById("detailScroll");
 if(ds)ds.addEventListener("wheel",e=>{if(!currentDetail)return;if(detailWheelLock){e.preventDefault();return}if(Math.abs(e.deltaY)<12)return;e.preventDefault();detailWheelLock=true;detailNav(e.deltaY>0?1:-1);setTimeout(()=>detailWheelLock=false,650)},{passive:false});
 document.addEventListener("submit",e=>{if(e.target.id!=="contactForm")return;e.preventDefault();const f=e.target,name=f.querySelector('[name="name"]'),phone=f.querySelector('[name="phone"]');if(!name.value.trim()||(phone.value||"").replace(/\D/g,"").length<10)return;let t="Hola, soy *"+name.value.trim()+"*\nTel: "+phone.value.trim()+"\n\nConsulta desde web Real Nort";window.open("https://wa.me/"+WA+"?text="+encodeURIComponent(t),"_blank","noopener")});
@@ -72,20 +72,53 @@ window.setCatalogView=setCatalogView;
 function initCatalogMap(){if(typeof L==="undefined")return;const el=document.getElementById("catalogMap");if(!el)return;if(catalogMap){catalogMap.invalidateSize();return}catalogMap=L.map(el,{zoomControl:true,scrollWheelZoom:true}).setView([20.211,-87.455],13);L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{attribution:"© OSM © CARTO",maxZoom:19,subdomains:"abcd"}).addTo(catalogMap);setTimeout(()=>{if(catalogMap)catalogMap.invalidateSize()},120)}
 function updateMapMarkers(props){if(!catalogMap||typeof L==="undefined")return;mapMarkers.forEach(m=>catalogMap.removeLayer(m));mapMarkers=[];if(!props||!props.length)return;const bounds=[];props.forEach(p=>{if(p.lat==null||p.lng==null)return;const icon=L.divIcon({className:"rn-marker",html:'<div class="rn-pin"></div>',iconSize:[14,14],iconAnchor:[7,7]});const marker=L.marker([p.lat,p.lng],{icon});const html="<strong>"+(p.name||"")+'</strong><div class="pop-meta">'+(p.loc||"")+" · "+(p.beds||"")+"<br>"+(p.price||"Precio negociable")+'</div><div class="pop-actions"><button type="button" data-map-open="'+p.id+'">Ver</button><a href="'+mapsUrl(p)+'" target="_blank" rel="noopener">Maps</a></div>';marker.bindPopup(html,{maxWidth:260});marker.on("popupopen",function(){const btn=document.querySelector('[data-map-open="'+p.id+'"]');if(btn)btn.onclick=function(){closeAll();openDetail(p)}});marker.addTo(catalogMap);mapMarkers.push(marker);bounds.push([p.lat,p.lng])});if(bounds.length===1)catalogMap.setView(bounds[0],15);else if(bounds.length>1)catalogMap.fitBounds(bounds,{padding:[40,40],maxZoom:15})}
 window.updateMapMarkers=updateMapMarkers;
-function openAll(){window.filterBeds="all";window.filterRegion="all";window.catalogView="grid";if(typeof window.renderGrid==="function")window.renderGrid();else renderGridFallback();setCatalogView("grid");document.getElementById("allOverlay").classList.add("open");document.body.style.overflow="hidden"}
+function openAll(){
+window.filterBeds="all";window.filterRegion="all";window.catalogView="grid";
+var g=document.getElementById("gallery"),pr=document.getElementById("progressRail");
+if(g){g.style.visibility="hidden";g.style.pointerEvents="none"}
+if(pr)pr.style.visibility="hidden";
+document.body.classList.add("catalog-open");
+var panel=document.getElementById("mapPanel"),grid=document.getElementById("propGrid");
+if(panel)panel.hidden=true;if(grid)grid.hidden=false;
+var bg=document.getElementById("btnViewGrid"),bm=document.getElementById("btnViewMap");
+if(bg)bg.setAttribute("aria-pressed","true");if(bm)bm.setAttribute("aria-pressed","false");
+renderGridFallback();
+document.getElementById("allOverlay").classList.add("open");
+document.body.style.overflow="hidden";
+}
 window.openAll=openAll;
-function closeAll(){document.getElementById("allOverlay").classList.remove("open");document.body.style.overflow="";if(window.gridImgObs){window.gridImgObs.disconnect();window.gridImgObs=null}}
+function closeAll(){
+document.getElementById("allOverlay").classList.remove("open");
+document.body.classList.remove("catalog-open");
+document.body.style.overflow="";
+var g=document.getElementById("gallery"),pr=document.getElementById("progressRail");
+if(g){g.style.visibility="";g.style.pointerEvents=""}
+if(pr)pr.style.visibility="";
+if(window.gridImgObs){window.gridImgObs.disconnect();window.gridImgObs=null}
+}
 window.closeAll=closeAll;
 function renderGridFallback(){
+const beds=[{key:"all",label:"Todas"},{key:"studio",label:"Estudios"},{key:"1",label:"1 Rec"},{key:"2",label:"2 Rec"},{key:"3",label:"3 Rec"}];
+const regions=[{key:"all",label:"Todas zonas"},{key:"aldea-zama",label:"Aldea Zama"},{key:"la-veleta",label:"La Veleta"},{key:"region-15",label:"Región 15"},{key:"amira",label:"Amira"},{key:"holistika",label:"Holistika"},{key:"centro",label:"Centro"},{key:"tulum-norte",label:"Tulum Norte"},{key:"tulum",label:"Tulum"}];
 const filtered=getFiltered();
+const fb=document.getElementById("filterBar");
+if(fb){
+fb.innerHTML='<div class="filter-row"><span class="filter-label">Tipo</span>'+beds.map(f=>'<button type="button" class="filter-btn'+(window.filterBeds===f.key?" active":"")+'" data-beds="'+f.key+'">'+f.label+"</button>").join("")+'</div><div class="filter-row"><span class="filter-label">Zona</span>'+regions.map(f=>'<button type="button" class="filter-btn'+(window.filterRegion===f.key?" active":"")+'" data-region="'+f.key+'">'+f.label+"</button>").join("")+'<span class="filter-count">'+filtered.length+(filtered.length===1?" propiedad":" propiedades")+"</span></div>";
+fb.querySelectorAll("[data-beds]").forEach(b=>b.onclick=()=>{window.filterBeds=b.dataset.beds;renderGridFallback()});
+fb.querySelectorAll("[data-region]").forEach(b=>b.onclick=()=>{window.filterRegion=b.dataset.region;renderGridFallback()});
+}
 const grid=document.getElementById("propGrid");
 if(!grid)return;
-if(!filtered.length){grid.innerHTML='<div style="grid-column:1/-1;padding:2rem;text-align:center;color:rgba(255,255,255,.4)">Sin resultados</div>';return}
-grid.innerHTML=filtered.map(p=>{const ni=(p.images&&p.images.length)||1;const d=(p.desc||"").slice(0,72);return'<article class="card" data-id="'+p.id+'"><div class="card-media"><div class="card-img" data-bg="'+safeImg(p,0,900)+'" data-n="'+ni+'"></div></div><div class="card-body"><p class="card-tag">'+(p.loc||"Tulum")+'</p><h3 class="card-name">'+p.name+'</h3><p class="card-meta">'+(p.beds||"")+(ni>1?' · '+ni+' fotos':'')+'</p>'+(d?'<p class="card-desc">'+d+(p.desc&&p.desc.length>72?'…':'')+'</p>':'')+'<div class="card-foot"><span class="card-price">'+(p.price||"Precio negociable")+'</span><span class="card-cta">Ver</span></div></div></article>'}).join("");
-if(window.gridImgObs)window.gridImgObs.disconnect();
-window.gridImgObs=new IntersectionObserver((ents)=>{ents.forEach(e=>{if(!e.isIntersecting)return;const el=e.target,u=el.getAttribute("data-bg");if(u)lazyBg(el,u);window.gridImgObs.unobserve(el)})},{root:grid,rootMargin:"400px 0px"});
-grid.querySelectorAll(".card-img[data-bg]").forEach(el=>window.gridImgObs.observe(el));
-grid.querySelectorAll(".card").forEach(card=>card.onclick=()=>{const p=findProp(card.dataset.id);if(p){closeAll();openDetail(p)}})}
+if(!filtered.length){grid.innerHTML='<div style="grid-column:1/-1;padding:2rem;text-align:center;color:rgba(255,255,255,.45)">Sin resultados</div>';return}
+grid.innerHTML=filtered.map(p=>{
+const ni=(p.images&&p.images.length)||1;
+let src=(p.images&&p.images[0])||"";
+if(src.indexOf("lh3.googleusercontent.com/d/")!==-1)src=src.replace(/=w\d+.*/,"")+"=w800";
+const d=(p.desc||"").slice(0,70);
+return '<article class="card" data-id="'+p.id+'"><div class="card-media"><div class="card-img" style="background-image:url(\''+src+'\')" data-n="'+ni+'"></div></div><div class="card-body"><p class="card-tag">'+(p.loc||"Tulum")+'</p><h3 class="card-name">'+p.name+'</h3><p class="card-meta">'+(p.beds||"")+(ni>1?" · "+ni+" fotos":"")+'</p>'+(d?'<p class="card-desc">'+d+(p.desc&&p.desc.length>70?"…":"")+"</p>":"")+'<div class="card-foot"><span class="card-price">'+(p.price||"Precio negociable")+'</span><span class="card-cta">Ver</span></div></div></article>';
+}).join("");
+grid.querySelectorAll(".card").forEach(card=>card.onclick=()=>{const p=findProp(card.dataset.id);if(p){closeAll();openDetail(p)}});
+}
 window.renderGrid=renderGridFallback;
 function tryBuild(){if(typeof featured!=="undefined"&&featured.length){buildGallery();return true}return false}
 if(!tryBuild()){window.__RN_ON_DATA=function(){tryBuild()};setTimeout(function(){if(!tryBuild())buildGallery()},3000)}
