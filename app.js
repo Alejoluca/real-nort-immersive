@@ -39,6 +39,37 @@ function coverImg(p,w){
   return safeImg(p, coverIdx(p), w||900);
 }
 
+function imgSrc(p, idx, w){
+  var u=(p&&p.images&&p.images[Math.min(idx||0, Math.max(0,(p.images.length||1)-1))])||"";
+  return u?driveOpt(u,w):"";
+}
+function coverSrcSet(p){
+  var u=(p&&p.images&&p.images[coverIdx(p)])||(p&&p.images&&p.images[0])||"";
+  if(!u)return {src:"", srcset:"", sizes:""};
+  var s120=driveOpt(u,120), s480=driveOpt(u,480), s640=driveOpt(u,640), s960=driveOpt(u,960);
+  return {
+    src:s640,
+    srcset:s120+" 120w, "+s480+" 480w, "+s640+" 640w, "+s960+" 960w",
+    sizes:"(max-width:600px) 50vw, (max-width:900px) 33vw, 25vw"
+  };
+}
+function mapCardSrcSet(p){
+  var u=(p&&p.images&&p.images[coverIdx(p)])||(p&&p.images&&p.images[0])||"";
+  if(!u)return {src:"", srcset:"", sizes:""};
+  var s240=driveOpt(u,240), s480=driveOpt(u,480), s720=driveOpt(u,720);
+  return {
+    src:s480,
+    srcset:s240+" 240w, "+s480+" 480w, "+s720+" 720w",
+    sizes:"(max-width:899px) 78vw, 340px"
+  };
+}
+function prefetchImg(url){
+  if(!url)return;
+  try{ var img=new Image(); img.decoding="async"; img.src=url; }catch(e){}
+}
+
+
+
 function safeImg(p,i,w){
   const imgs=p&&p.images;
   if(!imgs||!imgs.length)return "";
@@ -150,6 +181,7 @@ function buildGallery(){
     var sj=Math.floor(Math.random()*(si+1));
     var tmp=carousel[si];carousel[si]=carousel[sj];carousel[sj]=tmp;
   }
+  if(carousel.length>4)carousel=carousel.slice(0,4);
   const total=(allProperties&&allProperties.length)||featured.length;
   const hero=coverImg(carousel[0],1000);
   let h='<section class="slide active" data-index="0">'+
@@ -523,16 +555,16 @@ function renderGrid(){
   for(let i=0;i<filtered.length;i++){
     const p=filtered[i];
     const ni=(p.images&&p.images.length)||1;
-    var src=coverImg(p,640);
-    var raw=(p.images&&p.images[coverIdx(p)])||"";
-    if(raw.indexOf("lh3.googleusercontent.com/d/")!==-1)raw=raw.replace(/=w\d+.*/,"");
-    const eager=i<16;
+    var ss=coverSrcSet(p);
+    var eager=i<12;
     html+='<article class="card" data-id="'+p.id+'">';
-    if(eager&&src){
-      html+='<div class="card-photo loaded" style="background-image:url(\''+src+'\')"><span class="card-badge">'+ni+' fotos</span></div>';
-    }else{
-      html+='<div class="card-photo" data-bg="'+raw+'"><span class="card-badge">'+ni+' fotos</span></div>';
+    html+='<div class="card-photo'+(eager?' is-eager':'')+'"><span class="card-badge">'+ni+' fotos</span>';
+    if(ss.src){
+      html+='<img class="card-img" alt="'+esc(p.name)+'" width="640" height="427" decoding="async" '+
+        (eager?'fetchpriority="high" loading="eager"':'loading="lazy"')+
+        ' src="'+ss.src+'" srcset="'+ss.srcset+'" sizes="'+ss.sizes+'" />';
     }
+    html+='</div>';
     html+='<div class="card-info"><p class="card-loc">'+esc(p.loc||"Tulum")+'</p>'+
       '<h3 class="card-title">'+esc(p.name)+'</h3>'+
       '<p class="card-sub">'+esc(p.beds||"")+(ni>1?" · "+ni+" fotos":"")+'</p>'+
@@ -543,6 +575,13 @@ function renderGrid(){
 
   const obs=ensureGridObs();
   grid.querySelectorAll(".card-photo[data-bg]").forEach(function(el){obs.observe(el)});
+  for(var pi=0;pi<Math.min(filtered.length,14);pi++){prefetchImg(coverImg(filtered[pi],480));}
+  
+  grid.querySelectorAll(".card-img").forEach(function(img){
+    function done(){ img.classList.add("loaded"); if(img.parentNode) img.parentNode.classList.add("has-img"); }
+    if(img.complete && img.naturalWidth) done();
+    else { img.addEventListener("load", done, {once:true}); img.addEventListener("error", done, {once:true}); }
+  });
   grid.querySelectorAll(".card").forEach(function(card){
     card.onclick=function(){
       const p=findProp(card.getAttribute("data-id"));
@@ -574,7 +613,7 @@ function showMapSheet(p){
   s.innerHTML=
     '<button type="button" class="sheet-close" id="sheetClose" aria-label="Cerrar">×</button>'+
     '<div class="sheet-inner">'+
-      '<div class="sheet-photo"'+(img?' style="background-image:url(\''+img+'\')"':'')+'></div>'+
+      '<div class="sheet-photo">'+(img?'<img class="sheet-img" alt="'+esc(p.name)+'" width="640" height="480" decoding="async" src="'+img+'" />':'')+'</div>'+
       '<div class="sheet-body">'+
         '<div class="sheet-loc">'+esc(p.loc||"Tulum")+'</div>'+
         '<div class="sheet-title">'+esc(p.name)+'</div>'+
@@ -641,15 +680,20 @@ function renderMapRail(list){
   // Limit DOM for performance: show up to 24 cards in rail
   var slice=list.slice(0,24);
   rail.innerHTML=slice.map(function(p,i){
-    var img=coverImg(p,480);
+    var ms=mapCardSrcSet(p);
     return '<article class="map-card" data-id="'+p.id+'" data-i="'+i+'">'+
-      '<div class="map-card-photo"'+(img?' style="background-image:url(\''+img+'\')"':'')+'></div>'+
+      '<div class="map-card-photo">'+(ms.src?'<img class="map-card-img" alt="'+esc(p.name)+'" width="480" height="320" loading="lazy" decoding="async" src="'+ms.src+'" srcset="'+ms.srcset+'" sizes="'+ms.sizes+'" />':'')+'</div>'+
       '<div class="map-card-body">'+
       '<div class="map-card-loc">'+esc(p.loc||"Tulum")+'</div>'+
       '<div class="map-card-title">'+esc(p.name)+'</div>'+
       '<div class="map-card-price">'+esc(p.price||"Precio negociable")+'</div>'+
       '</div></article>';
   }).join("");
+  rail.querySelectorAll(".map-card-img").forEach(function(img){
+    function done(){ img.classList.add("loaded"); }
+    if(img.complete && img.naturalWidth) done();
+    else { img.addEventListener("load", done, {once:true}); img.addEventListener("error", done, {once:true}); }
+  });
   rail.querySelectorAll(".map-card").forEach(function(card){
     card.onclick=function(e){
       e.stopPropagation();
