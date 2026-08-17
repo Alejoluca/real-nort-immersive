@@ -1,7 +1,6 @@
 (async function(){
 const WA = "529843237592";
 
-/* Conversion tracking */
 const metrics = {
   events: [],
   track(name, data) {
@@ -10,6 +9,12 @@ const metrics = {
     try {
       window.dataLayer = window.dataLayer || [];
       window.dataLayer.push({ event: "rn_" + name, ...data });
+    } catch (_) {}
+    try {
+      if (typeof gtag === "function" && window.RN_GA4_ID && window.RN_GA4_ID !== "G-XXXXXXXXXX" && window.RN_GA4_ID.indexOf("XXXX") === -1) {
+        const params = Object.assign({ event_category: "real_nort", send_to: window.RN_GA4_ID }, data || {});
+        gtag("event", name, params);
+      }
     } catch (_) {}
     if (window.__RN_DEBUG) console.log("[RN]", name, data || "");
   },
