@@ -846,3 +846,134 @@ body{
 }
 .card-photo.is-eager::before,
 .card-photo.has-img::before{display:none}
+
+/* ═══ CRITICAL FIX grid cards + map ═══ */
+#propGrid:not([hidden]){
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:14px!important;
+  align-content:start!important;
+  padding:14px 14px 48px!important;
+}
+@media(min-width:900px){
+  #propGrid:not([hidden]){grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:18px!important}
+}
+@media(min-width:1200px){
+  #propGrid:not([hidden]){grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+#propGrid .card{
+  display:flex!important;
+  flex-direction:column!important;
+  height:auto!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  background:#161616!important;
+  border-radius:16px!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  contain:none!important;
+  content-visibility:visible!important;
+}
+#propGrid .card-photo{
+  position:relative!important;
+  width:100%!important;
+  aspect-ratio:3/2!important;
+  height:auto!important;
+  min-height:140px!important;
+  max-height:none!important;
+  flex:0 0 auto!important;
+  overflow:hidden!important;
+  background:#1c1c1e!important;
+  contain:none!important;
+  content-visibility:visible!important;
+  padding:0!important;
+}
+#propGrid .card-photo::before{display:none!important}
+#propGrid .card-img{
+  position:absolute!important;
+  top:0!important;left:0!important;right:0!important;bottom:0!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  object-position:center!important;
+  opacity:1!important;
+  display:block!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  max-width:none!important;
+  max-height:none!important;
+}
+#propGrid .card-badge{
+  position:absolute!important;
+  left:10px!important;bottom:10px!important;
+  z-index:3!important;
+}
+#propGrid .card-info{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:4px!important;
+  padding:12px 14px 14px!important;
+  flex:1 1 auto!important;
+  height:auto!important;
+  min-height:72px!important;
+  position:relative!important;
+  background:#161616!important;
+}
+#propGrid .card-title{
+  font-size:15px!important;
+  line-height:1.25!important;
+  color:#fff!important;
+  margin:0!important;
+}
+#propGrid .card-loc{color:#c9a87c!important;font-size:9px!important;letter-spacing:.14em!important;text-transform:uppercase!important}
+#propGrid .card-sub{font-size:12px!important;color:rgba(245,245,247,.45)!important}
+#propGrid .card-bottom{
+  display:flex!important;
+  justify-content:space-between!important;
+  align-items:center!important;
+  margin-top:8px!important;
+}
+#propGrid .card-price{color:#c9a87c!important;font-weight:600!important;font-size:13px!important}
+
+/* Map: no phantom left panel; sheet only when open with content */
+#mapSheet:not(.open){display:none!important;width:0!important;height:0!important;overflow:hidden!important}
+#mapPanel:not([hidden]) .map-layout{
+  display:flex!important;
+  flex-direction:column!important;
+  flex:1!important;
+  min-height:0!important;
+  position:relative!important;
+}
+#mapPanel:not([hidden]) .catalog-map{
+  flex:1 1 auto!important;
+  min-height:280px!important;
+  width:100%!important;
+  height:100%!important;
+}
+#mapPanel:not([hidden]) .map-rail{
+  position:absolute!important;
+  left:0;right:0;bottom:0;
+  z-index:5;
+}
+@media(min-width:900px){
+  #mapPanel:not([hidden]) .map-layout{
+    display:grid!important;
+    grid-template-columns:1fr 340px!important;
+    grid-template-rows:1fr!important;
+  }
+  #mapPanel:not([hidden]) .catalog-map{grid-column:1;grid-row:1;min-height:0!important}
+  #mapPanel:not([hidden]) .map-rail{
+    position:relative!important;
+    grid-column:2;grid-row:1;
+    height:100%!important;
+    max-height:none!important;
+    overflow-y:auto!important;
+    flex-direction:column!important;
+    background:#0c0c0e!important;
+  }
+}
+/* Map card images */
+.map-card-photo{position:relative!important;height:120px!important;min-height:120px!important;overflow:hidden!important}
+.map-card-img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;opacity:1!important}
+.sheet-photo{position:relative!important;overflow:hidden!important}
+.sheet-img{width:100%!important;height:100%!important;object-fit:cover!important;opacity:1!important;display:block!important}
