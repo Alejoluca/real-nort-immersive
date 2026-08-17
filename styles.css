@@ -1393,3 +1393,126 @@ body{
   touch-action:pan-x!important;
   z-index:40!important;
 }
+
+/* ═══ CSS GRID + GAP v58 ═══ */
+#propGrid:not([hidden]){
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  grid-auto-rows: auto !important;
+  gap: 14px !important;
+  column-gap: 14px !important;
+  row-gap: 18px !important;
+  align-items: start !important;
+  justify-content: stretch !important;
+  padding: 14px 14px calc(28px + env(safe-area-inset-bottom)) !important;
+  margin: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+@media (min-width: 700px){
+  #propGrid:not([hidden]){
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+    column-gap: 16px !important;
+    row-gap: 20px !important;
+    padding: 16px 18px 36px !important;
+  }
+}
+@media (min-width: 900px){
+  #propGrid:not([hidden]){
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+    column-gap: 18px !important;
+    row-gap: 22px !important;
+  }
+}
+@media (min-width: 1200px){
+  #propGrid:not([hidden]){
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 20px !important;
+    column-gap: 20px !important;
+    row-gap: 24px !important;
+  }
+}
+
+#propGrid .card{
+  display: grid !important;
+  grid-template-rows: 158px auto !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #161616 !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(255,255,255,.1) !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  transform: none !important;
+  contain: none !important;
+  content-visibility: visible !important;
+}
+
+#propGrid .card-photo{
+  grid-row: 1 !important;
+  grid-column: 1 !important;
+  width: 100% !important;
+  height: 158px !important;
+  min-height: 158px !important;
+  max-height: 158px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background-color: #1c1c1e !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  position: relative !important;
+  overflow: hidden !important;
+  aspect-ratio: auto !important;
+}
+
+#propGrid .card-info{
+  grid-row: 2 !important;
+  grid-column: 1 !important;
+  display: grid !important;
+  grid-template-rows: auto auto auto auto !important;
+  gap: 4px !important;
+  padding: 10px 12px 12px !important;
+  margin: 0 !important;
+  background: #161616 !important;
+  min-width: 0 !important;
+}
+
+#propGrid .card-bottom{
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-top: 4px !important;
+}
+
+#propGrid .card-badge{
+  position: absolute !important;
+  left: 8px !important;
+  bottom: 8px !important;
+  top: auto !important;
+  right: auto !important;
+  z-index: 2 !important;
+}
+
+#propGrid .card-title,
+#propGrid .card-loc,
+#propGrid .card-sub,
+#propGrid .card-price{
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+#propGrid .card-title{ white-space: normal !important; display: -webkit-box !important; -webkit-line-clamp: 2 !important; -webkit-box-orient: vertical !important; }
