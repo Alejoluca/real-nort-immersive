@@ -493,3 +493,18 @@ body,button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 @media(prefers-reduced-motion:reduce){
   .rn-price-pin,#allOverlay .map-card,#mapSheet.open{transition:none!important;animation:none!important}
 }
+
+/* ═══ FINAL v51 ═══ */
+#mapSheet{position:relative}
+#allOverlay .overlay-tools .btn[aria-pressed="true"]{
+  background:rgba(201,168,124,.18)!important;
+  border-color:rgba(201,168,124,.45)!important;
+  color:#c9a87c!important;
+}
+.card-photo.loaded,.slide-bg.loaded,.detail-slide.loaded{opacity:1}
+/* Prevent iOS text size jump */
+html{-webkit-text-size-adjust:100%}
+/* Focus visible for a11y */
+.btn:focus-visible,.cta:focus-visible,.filter-btn:focus-visible,.card:focus-visible{
+  outline:2px solid rgba(201,168,124,.7);outline-offset:2px;
+}
