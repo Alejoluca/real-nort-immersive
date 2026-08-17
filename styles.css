@@ -323,3 +323,85 @@ body,button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 @media(min-width:1100px){
   #allOverlay #propGrid{grid-template-columns:repeat(3,1fr)!important}
 }
+
+/* ═══ AIRBNB-STYLE MAP ═══ */
+#allOverlay .map-panel{
+  flex:1!important;min-height:0!important;display:flex!important;flex-direction:column!important;
+  background:#0a0a0a!important;
+}
+#allOverlay .map-panel[hidden]{display:none!important}
+#allOverlay .map-layout{
+  flex:1;min-height:0;display:flex;flex-direction:column;position:relative;
+}
+#allOverlay .catalog-map{
+  flex:1!important;min-height:240px!important;width:100%!important;background:#111!important;
+}
+#allOverlay .map-rail{
+  flex:0 0 auto;
+  display:flex;
+  gap:12px;
+  padding:12px 14px calc(14px + env(safe-area-inset-bottom));
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scroll-snap-type:x mandatory;
+  background:linear-gradient(180deg,transparent,rgba(0,0,0,.92) 20%);
+  position:absolute;left:0;right:0;bottom:0;z-index:5;
+  scrollbar-width:none;
+}
+#allOverlay .map-rail::-webkit-scrollbar{display:none}
+#allOverlay .map-card{
+  flex:0 0 260px;
+  scroll-snap-align:start;
+  background:#161616;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:16px;
+  overflow:hidden;
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  box-shadow:0 12px 32px rgba(0,0,0,.45);
+  transition:transform .2s,border-color .2s;
+}
+#allOverlay .map-card.active{
+  border-color:rgba(201,168,124,.55);
+  transform:translateY(-4px);
+}
+#allOverlay .map-card-photo{
+  height:120px;background:#1a1a1a center/cover no-repeat;
+}
+#allOverlay .map-card-body{padding:10px 12px 12px}
+#allOverlay .map-card-loc{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#c9a87c;font-weight:600}
+#allOverlay .map-card-title{font-family:'Playfair Display',Georgia,serif;font-size:14px;color:#fff;margin:2px 0 4px;line-height:1.25}
+#allOverlay .map-card-price{font-size:13px;font-weight:600;color:#c9a87c}
+/* Price pins like Airbnb */
+.rn-price-pin{
+  background:#fff!important;
+  color:#111!important;
+  border:none!important;
+  border-radius:980px!important;
+  padding:6px 10px!important;
+  font:600 12px/1 -apple-system,BlinkMacSystemFont,Inter,sans-serif!important;
+  box-shadow:0 2px 8px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.06)!important;
+  white-space:nowrap!important;
+  transform:translate(-50%,-50%);
+}
+.rn-price-pin.active{
+  background:#111!important;
+  color:#fff!important;
+  box-shadow:0 4px 14px rgba(0,0,0,.4)!important;
+  transform:translate(-50%,-50%) scale(1.08);
+}
+.rn-price-pin:hover{transform:translate(-50%,-50%) scale(1.06)}
+.leaflet-div-icon.rn-marker{background:transparent!important;border:none!important}
+@media(min-width:900px){
+  #allOverlay .map-layout{flex-direction:row}
+  #allOverlay .catalog-map{flex:1.4}
+  #allOverlay .map-rail{
+    position:relative;flex:0 0 320px;flex-direction:column;
+    overflow-x:hidden;overflow-y:auto;max-height:none;
+    background:#0a0a0a;border-left:1px solid rgba(255,255,255,.08);
+    padding:14px;gap:12px;
+  }
+  #allOverlay .map-card{flex:0 0 auto;width:100%}
+  #allOverlay .map-card-photo{height:140px}
+}
