@@ -2,27 +2,36 @@ var featured=[],allProperties=[];
 (function(){
   function apply(d){
     if(!d)return;
-    featured = d.featured || [];
-    allProperties = d.allProperties || featured.slice();
+    if(d.featured && d.featured.length) featured = d.featured;
+    if(d.allProperties && d.allProperties.length){
+      var seen = {};
+      featured.forEach(function(p){ if(p&&p.id) seen[p.id]=1; });
+      d.allProperties.forEach(function(p){
+        if(p&&p.id&&!seen[p.id]){ seen[p.id]=1; allProperties.push(p); }
+      });
+      featured.forEach(function(p){ if(p&&p.id&&!seen[p.id]){ seen[p.id]=1; allProperties.unshift(p); } });
+      if(!allProperties.length) allProperties = featured.slice();
+    }
     if(typeof window.__RN_ON_DATA==="function") window.__RN_ON_DATA();
   }
-  function fail(){
-    console.warn("Real Nort: catalog load failed");
-    if(typeof window.__RN_ON_DATA==="function") window.__RN_ON_DATA();
+  var pending = 3, collected = {featured:[], allProperties:[]};
+  function done(){
+    pending--;
+    if(pending>0)return;
+    apply(collected);
   }
-  fetch("catalog.json?v=33")
-    .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
-    .then(apply)
-    .catch(function(){
-      var done=0;
-      function tick(){ done++; if(done>=4){
-        var raw=[].concat(window.__RN_PART1||[],window.__RN_PART2||[],window.__RN_PART3||[],window.__RN_PART4||[]);
-        var seen={},pool=[];
-        for(var i=0;i<raw.length;i++){ var p=raw[i]; if(!p||!p.id||seen[p.id])continue; seen[p.id]=1; pool.push(p); }
-        apply({featured:pool.slice(0,7), allProperties:pool});
-      }}
-      function load(src){ var s=document.createElement("script"); s.src=src+"?v=33"; s.async=true; s.onload=tick; s.onerror=tick; document.head.appendChild(s); }
-      load("part1.js"); load("part2.js"); load("part3.js"); load("part4.js");
-      setTimeout(function(){ if(done<4) tick(); }, 4000);
-    });
+  function load(url, key){
+    fetch(url+"?v=33")
+      .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function(d){
+        if(d.featured) collected.featured = d.featured;
+        if(d.allProperties) collected.allProperties = collected.allProperties.concat(d.allProperties);
+        done();
+      })
+      .catch(function(){ done(); });
+  }
+  load("catalog-a.json", "a");
+  load("catalog-b.json", "b");
+  load("catalog-c.json", "c");
+  setTimeout(function(){ if(pending>0){ pending=0; apply(collected); } }, 6000);
 })();
