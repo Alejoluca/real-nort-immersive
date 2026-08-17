@@ -169,14 +169,17 @@ body,button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
   inset:0!important;
   z-index:9999!important;
   background:#000!important;
-  display:none!important;
   flex-direction:column!important;
   opacity:1!important;
   pointer-events:auto!important;
-  visibility:visible!important;
+  visibility:hidden!important;
+  display:flex!important;
+  transform:translateY(110%)!important;
 }
 #allOverlay.overlay.open{
-  display:flex!important;
+  visibility:visible!important;
+  transform:translateY(0)!important;
+  pointer-events:auto!important;
 }
 #allOverlay .overlay-header{
   flex:0 0 auto;
