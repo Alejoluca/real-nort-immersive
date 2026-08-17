@@ -12,7 +12,7 @@ var featured=[],allProperties=[];
   }
   function loadScript(src,cb){
     var s=document.createElement("script");
-    s.src=src+"?v=26";s.async=true;s.onload=cb;s.onerror=cb;
+    s.src=src+"?v=27";s.async=true;s.onload=cb;s.onerror=cb;
     document.head.appendChild(s);
   }
   var done=0,need=4;
@@ -21,5 +21,5 @@ var featured=[],allProperties=[];
   loadScript("part2.js",tick);
   loadScript("part3.js",tick);
   loadScript("part4.js",tick);
-  setTimeout(function(){if(done<need)go()},4000);
+  setTimeout(function(){if(done<need)go()},3500);
 })();
