@@ -557,19 +557,26 @@ function renderGrid(){
     const ni=(p.images&&p.images.length)||1;
     var ss=coverSrcSet(p);
     var eager=i<12;
-    html+='<article class="card" data-id="'+p.id+'">';
-    html+='<div class="card-photo'+(eager?' is-eager':'')+'"><span class="card-badge">'+ni+' fotos</span>';
-    if(ss.src){
+    var src=ss.src||coverImg(p,640);
+    html+='<article class="card" data-id="'+p.id+'" style="display:flex;flex-direction:column;overflow:hidden;background:#161616;border-radius:16px;border:1px solid rgba(255,255,255,.08)">';
+    /* padding-bottom aspect-ratio 3:2 — works on all browsers */
+    html+='<div class="card-photo'+(eager?" is-eager":"")+'" style="position:relative;width:100%;height:0;padding-bottom:66.666%;overflow:hidden;background:#1c1c1e;flex-shrink:0">';
+    html+='<span class="card-badge" style="position:absolute;left:10px;bottom:10px;z-index:2">'+ni+" fotos</span>";
+    if(src){
       html+='<img class="card-img" alt="'+esc(p.name)+'" width="640" height="427" decoding="async" '+
         (eager?'fetchpriority="high" loading="eager"':'loading="lazy"')+
-        ' src="'+ss.src+'" srcset="'+ss.srcset+'" sizes="'+ss.sizes+'" />';
+        ' src="'+src+'"'+(ss.srcset?' srcset="'+ss.srcset+'" sizes="'+ss.sizes+'"':'')+
+        ' style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block;border:0;opacity:1" />';
     }
-    html+='</div>';
-    html+='<div class="card-info"><p class="card-loc">'+esc(p.loc||"Tulum")+'</p>'+
-      '<h3 class="card-title">'+esc(p.name)+'</h3>'+
-      '<p class="card-sub">'+esc(p.beds||"")+(ni>1?" · "+ni+" fotos":"")+'</p>'+
-      '<div class="card-bottom"><span class="card-price">'+esc(p.price||"Precio negociable")+'</span>'+
-      '<span class="card-link">Ver</span></div></div></article>';
+    html+="</div>";
+    html+='<div class="card-info" style="display:flex;flex-direction:column;gap:4px;padding:12px 14px 14px;flex:1 1 auto">';
+    html+='<p class="card-loc" style="margin:0;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#c9a87c;font-weight:600">'+esc(p.loc||"Tulum")+"</p>";
+    html+='<h3 class="card-title" style="margin:0;font-size:15px;line-height:1.25;color:#fff;font-weight:500">'+esc(p.name)+"</h3>";
+    html+='<p class="card-sub" style="margin:0;font-size:12px;color:rgba(245,245,247,.45)">'+esc(p.beds||"")+(ni>1?" · "+ni+" fotos":"")+"</p>";
+    html+='<div class="card-bottom" style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">';
+    html+='<span class="card-price" style="font-size:13px;font-weight:600;color:#c9a87c">'+esc(p.price||"Precio negociable")+"</span>";
+    html+='<span class="card-link" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(245,245,247,.4)">Ver</span>';
+    html+="</div></div></article>";
   }
   grid.innerHTML=html;
 
@@ -682,7 +689,7 @@ function renderMapRail(list){
   rail.innerHTML=slice.map(function(p,i){
     var ms=mapCardSrcSet(p);
     return '<article class="map-card" data-id="'+p.id+'" data-i="'+i+'">'+
-      '<div class="map-card-photo">'+(ms.src?'<img class="map-card-img" alt="'+esc(p.name)+'" width="480" height="320" loading="lazy" decoding="async" src="'+ms.src+'" srcset="'+ms.srcset+'" sizes="'+ms.sizes+'" />':'')+'</div>'+
+      '<div class="map-card-photo" style="position:relative;width:100%;height:120px;overflow:hidden;background:#1c1c1e">'+(ms.src?'<img class="map-card-img" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:1"  alt="'+esc(p.name)+'" width="480" height="320" loading="lazy" decoding="async" src="'+ms.src+'" srcset="'+ms.srcset+'" sizes="'+ms.sizes+'" />':'')+'</div>'+
       '<div class="map-card-body">'+
       '<div class="map-card-loc">'+esc(p.loc||"Tulum")+'</div>'+
       '<div class="map-card-title">'+esc(p.name)+'</div>'+
