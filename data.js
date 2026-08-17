@@ -1,6 +1,6 @@
 var featured=[],allProperties=[];
 (function(){
-  var urls=["catalog-a.json","catalog-b.json","catalog-c.json","catalog-d.json","catalog-e.json"];
+  var urls=["catalog-a.json","catalog-b.json","catalog-c.json","catalog-d.json","catalog-e.json","catalog-f.json"];
   var pending=urls.length;
   var collected={featured:[],allProperties:[]};
   function finish(){
