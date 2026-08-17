@@ -591,6 +591,53 @@ function renderGrid(){
     html+='</div></div></article>';
   }
   grid.innerHTML=html;
+  /* Force grid layout — beats any stylesheet conflict */
+  grid.style.setProperty("display","grid","important");
+  grid.style.setProperty("grid-auto-flow","row","important");
+  grid.style.setProperty("grid-template-columns","repeat(2, minmax(0, 1fr))","important");
+  grid.style.setProperty("gap","14px","important");
+  grid.style.setProperty("column-gap","14px","important");
+  grid.style.setProperty("row-gap","18px","important");
+  grid.style.setProperty("align-items","start","important");
+  grid.style.setProperty("padding","14px","important");
+  grid.style.setProperty("box-sizing","border-box","important");
+  grid.style.setProperty("width","100%","important");
+  if(window.matchMedia&&window.matchMedia("(min-width:900px)").matches){
+    grid.style.setProperty("grid-template-columns","repeat(3, minmax(0, 1fr))","important");
+    grid.style.setProperty("gap","18px","important");
+  }
+  if(window.matchMedia&&window.matchMedia("(min-width:1200px)").matches){
+    grid.style.setProperty("grid-template-columns","repeat(4, minmax(0, 1fr))","important");
+  }
+  grid.querySelectorAll(".card").forEach(function(card){
+    card.style.setProperty("display","block","important");
+    card.style.setProperty("width","100%","important");
+    card.style.setProperty("min-width","0","important");
+    card.style.setProperty("height","auto","important");
+    card.style.setProperty("overflow","hidden","important");
+    card.style.setProperty("border-radius","14px","important");
+    card.style.setProperty("background","#161616","important");
+  });
+  grid.querySelectorAll(".card-photo").forEach(function(el){
+    el.style.setProperty("display","block","important");
+    el.style.setProperty("width","100%","important");
+    el.style.setProperty("height","160px","important");
+    el.style.setProperty("min-height","160px","important");
+    el.style.setProperty("max-height","160px","important");
+    el.style.setProperty("padding","0","important");
+    el.style.setProperty("margin","0","important");
+    el.style.setProperty("aspect-ratio","auto","important");
+    el.style.setProperty("background-size","cover","important");
+    el.style.setProperty("background-position","center","important");
+    el.style.setProperty("background-repeat","no-repeat","important");
+    el.style.setProperty("position","relative","important");
+    el.style.setProperty("overflow","hidden","important");
+  });
+  grid.querySelectorAll(".card-info").forEach(function(el){
+    el.style.setProperty("display","block","important");
+    el.style.setProperty("padding","10px 12px 12px","important");
+    el.style.setProperty("height","auto","important");
+  });
   var obs=ensureGridObs();
   grid.querySelectorAll(".card-photo[data-bg]").forEach(function(el){obs.observe(el)});
   for(var pi=0;pi<Math.min(filtered.length,14);pi++){prefetchImg(coverImg(filtered[pi],480));}
