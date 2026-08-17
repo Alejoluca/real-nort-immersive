@@ -4,30 +4,41 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <meta name="theme-color" content="#000000"/>
-<meta name="description" content="Real Nort México — Propiedades de lujo en Tulum, Aldea Zama, La Veleta y Amira."/>
-<meta property="og:title" content="Real Nort México"/>
-<meta property="og:description" content="Catálogo inmersivo de propiedades en Tulum."/>
-<title>Real Nort México · Tulum</title>
+<meta name="description" content="Real Nort México — Propiedades de lujo en Tulum: Aldea Zama, La Veleta, Holistika, Amira. Experiencia inmersiva con fotos reales."/>
+<meta name="robots" content="index,follow"/>
+<meta property="og:title" content="Real Nort México · Propiedades en Tulum"/>
+<meta property="og:description" content="Catálogo inmersivo de 46 propiedades en Tulum. Fotos reales, mapa, WhatsApp y email."/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://alejoluca.github.io/real-nort-immersive/"/>
+<meta property="og:locale" content="es_MX"/>
+<link rel="canonical" href="https://alejoluca.github.io/real-nort-immersive/"/>
+<title>Real Nort México · Propiedades de lujo en Tulum</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="preconnect" href="https://lh3.googleusercontent.com"/>
+<link rel="dns-prefetch" href="https://lh3.googleusercontent.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="styles.css?v=30"/>
-<script>window.RN_EMAIL='alejolucatelli@gmail.com';window.dataLayer=window.dataLayer||[];</script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<link rel="stylesheet" href="styles.css?v=31"/>
+<script>
+  window.RN_EMAIL = 'alejolucatelli@gmail.com';
+  window.dataLayer = window.dataLayer || [];
+</script>
 </head>
 <body>
 <header class="header">
-  <a href="#" class="logo" id="logoHome">REAL <span>NORT</span></a>
+  <a href="#" class="logo" id="logoHome" aria-label="Real Nort inicio">REAL <span>NORT</span></a>
   <div class="header-actions">
     <button type="button" class="btn" id="btnAll">Todas</button>
-    <a class="btn primary" href="https://wa.me/529843237592?text=Hola%2C%20vi%20Real%20Nort" target="_blank" rel="noopener">WhatsApp</a>
+    <a class="btn" href="https://www.facebook.com/alejo.lucatelliperren" target="_blank" rel="noopener">Facebook</a>
+    <a class="btn primary" href="https://wa.me/529843237592?text=Hola%2C%20vi%20la%20web%20de%20Real%20Nort%20y%20quiero%20informaci%C3%B3n" target="_blank" rel="noopener">WhatsApp</a>
   </div>
 </header>
-<nav class="progress-rail" id="progressRail"></nav>
+<nav class="progress-rail" id="progressRail" aria-label="Progreso"></nav>
 <main class="gallery" id="gallery"></main>
-<div class="overlay" id="allOverlay">
+<div class="overlay" id="allOverlay" role="dialog" aria-modal="true">
   <div class="overlay-header">
-    <div class="overlay-title">Propiedades</div>
+    <div class="overlay-title">Todas las propiedades</div>
     <div class="overlay-tools">
       <button type="button" class="btn" id="btnViewGrid" aria-pressed="true">Grid</button>
       <button type="button" class="btn" id="btnViewMap" aria-pressed="false">Mapa</button>
@@ -38,12 +49,12 @@
   <div class="catalog-body">
     <div class="grid" id="propGrid"></div>
     <div class="map-panel" id="mapPanel" hidden>
-      <div id="catalogMap" class="catalog-map"></div>
-      <p class="map-hint">Toca un pin</p>
+      <div id="catalogMap" class="catalog-map" role="application" aria-label="Mapa de propiedades"></div>
+      <p class="map-hint">Toca un pin · Ver galería o abrir en Google Maps</p>
     </div>
   </div>
 </div>
-<div class="detail" id="detail">
+<div class="detail" id="detail" role="dialog" aria-modal="true">
   <div class="detail-top">
     <button type="button" class="btn" id="detailBack">← Volver</button>
     <div class="detail-counter" id="detailCounter"></div>
@@ -53,9 +64,10 @@
     <div class="detail-slides" id="detailSlides"></div>
   </div>
   <div class="detail-info" id="detailInfo"></div>
-  <nav class="detail-rail" id="detailRail"></nav>
+  <nav class="detail-rail" id="detailRail" aria-label="Fotos"></nav>
 </div>
-<script src="data.js?v=30"></script>
-<script src="app.js?v=30"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="data.js?v=31"></script>
+<script src="app.js?v=31"></script>
 </body>
 </html>
