@@ -692,6 +692,10 @@ function renderMapRail(list){
     if(img.complete && img.naturalWidth) done();
     else { img.addEventListener("load", done, {once:true}); img.addEventListener("error", done, {once:true}); }
   });
+  rail.style.pointerEvents="auto";
+  rail.style.overflowX="auto";
+  rail.style.webkitOverflowScrolling="touch";
+  rail.style.touchAction="pan-x";
   rail.querySelectorAll(".map-card").forEach(function(card){
     card.onclick=function(e){
       e.stopPropagation();
