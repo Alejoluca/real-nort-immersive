@@ -541,3 +541,51 @@ html{-webkit-text-size-adjust:100%}
   transform:translate(-50%,-50%) scale(1.15)!important;
   box-shadow:0 0 0 6px rgba(201,168,124,.28),0 6px 18px rgba(0,0,0,.25)!important;
 }
+
+/* ═══ AIRBNB SPLIT + NAV v53 ═══ */
+@media(min-width:900px){
+  #allOverlay .map-layout{
+    flex-direction:row!important;
+    height:100%!important;
+  }
+  #allOverlay .catalog-map{
+    flex:1 1 58%!important;
+    min-height:100%!important;
+  }
+  #allOverlay .map-rail{
+    position:relative!important;
+    flex:0 0 38%!important;
+    max-width:420px!important;
+    max-height:none!important;
+    height:100%!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    flex-direction:column!important;
+    background:#0c0c0e!important;
+    border-left:1px solid rgba(255,255,255,.08)!important;
+    padding:16px!important;
+    gap:14px!important;
+    pointer-events:auto!important;
+    scroll-snap-type:none!important;
+  }
+  #allOverlay .map-card{
+    flex:0 0 auto!important;
+    width:100%!important;
+    max-width:none!important;
+  }
+  #allOverlay .map-card-photo{height:160px!important}
+  #allOverlay .leaflet-bottom.leaflet-right{bottom:20px!important}
+  #mapSheet.open{
+    position:absolute;left:0;right:auto;bottom:0;
+    width:58%;max-width:none;
+    border-right:1px solid rgba(255,255,255,.08);
+  }
+}
+/* Card typography calm */
+#allOverlay .card-sub{font-size:11px!important;color:rgba(245,245,247,.4)!important}
+#allOverlay .card-title{font-size:16px!important}
+#allOverlay .card-price{font-size:13px!important}
+/* Faster motion */
+.slide-bg{transition:opacity .45s var(--ease),transform 4s var(--ease)!important}
+.overlay{transition:opacity .22s var(--ease)!important}
+#mapSheet.open{animation-duration:.22s!important}
