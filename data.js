@@ -1,2 +1,2 @@
-/* loaded via data1.js + data2.js */
-if(typeof featured==="undefined"){var featured=[],allProperties=[];}
+/* data via data1+data2+data3 */
+if(typeof featured==='undefined'){var featured=[],allProperties=[];}
