@@ -465,40 +465,116 @@ function renderGrid(){
 window.renderGrid=renderGrid;
 
 function ensureMap(){
-  if(catalogMap||typeof L==="undefined")return;
+  if(typeof L==="undefined"){console.warn("Leaflet missing");return}
   const el=document.getElementById("catalogMap");
   if(!el)return;
-  catalogMap=L.map(el,{zoomControl:false,attributionControl:false}).setView([20.211, -87.465],12);
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{maxZoom:18}).addTo(catalogMap);
-  setTimeout(function(){if(catalogMap)catalogMap.invalidateSize()},200);
+  if(!catalogMap){
+    catalogMap=L.map(el,{
+      zoomControl:false,
+      attributionControl:false,
+      scrollWheelZoom:true
+    }).setView([20.211, -87.465],12);
+    L.control.zoom({position:"bottomright"}).addTo(catalogMap);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{
+      maxZoom:18,
+      subdomains:"abcd"
+    }).addTo(catalogMap);
+  }
+  setTimeout(function(){if(catalogMap)catalogMap.invalidateSize()},120);
+  setTimeout(function(){if(catalogMap)catalogMap.invalidateSize()},400);
+}
+
+function pricePinIcon(label, active){
+  return L.divIcon({
+    className:"rn-marker",
+    html:'<div class="rn-price-pin'+(active?" active":"")+'">'+label+"</div>",
+    iconSize:[0,0],
+    iconAnchor:[0,0]
+  });
+}
+
+function renderMapRail(list){
+  const rail=document.getElementById("mapRail");
+  if(!rail)return;
+  if(!list.length){
+    rail.innerHTML='<div style="color:rgba(255,255,255,.45);padding:12px;font-size:13px">Sin resultados en el mapa</div>';
+    return;
+  }
+  rail.innerHTML=list.map(function(p,i){
+    var img=(p.images&&p.images[0])?driveOpt(p.images[0],600):"";
+    return '<article class="map-card" data-id="'+p.id+'" data-i="'+i+'">'+
+      '<div class="map-card-photo"'+(img?' style="background-image:url(\''+img+'\')"':'')+'></div>'+
+      '<div class="map-card-body">'+
+      '<div class="map-card-loc">'+esc(p.loc||"Tulum")+'</div>'+
+      '<div class="map-card-title">'+esc(p.name)+'</div>'+
+      '<div class="map-card-price">'+esc(p.price||"Precio negociable")+'</div>'+
+      '</div></article>';
+  }).join("");
+  rail.querySelectorAll(".map-card").forEach(function(card){
+    card.onclick=function(){
+      var p=findProp(card.getAttribute("data-id"));
+      if(!p)return;
+      // highlight pin + fly
+      highlightMapProp(p.id);
+      if(p.lat!=null&&catalogMap){
+        catalogMap.flyTo([p.lat,p.lng],15,{duration:.6});
+      }
+      // open detail after brief pause for context
+      setTimeout(function(){closeAll();openDetail(p)},280);
+    };
+  });
+}
+
+var activeMapId=null;
+function highlightMapProp(id){
+  activeMapId=id;
+  mapMarkers.forEach(function(entry){
+    var on=entry.id===id;
+    entry.marker.setIcon(pricePinIcon(entry.label,on));
+    if(on)entry.marker.setZIndexOffset(1000);
+    else entry.marker.setZIndexOffset(0);
+  });
+  var rail=document.getElementById("mapRail");
+  if(rail){
+    rail.querySelectorAll(".map-card").forEach(function(c){
+      c.classList.toggle("active",c.getAttribute("data-id")===id);
+    });
+  }
 }
 
 function updateMapMarkers(list){
+  ensureMap();
   if(!catalogMap)return;
-  mapMarkers.forEach(function(m){catalogMap.removeLayer(m)});
+  mapMarkers.forEach(function(entry){catalogMap.removeLayer(entry.marker)});
   mapMarkers=[];
   const bounds=[];
   list.forEach(function(p){
     if(p.lat==null||p.lng==null)return;
-    const icon=L.divIcon({className:"rn-marker",html:'<div class="rn-pin"></div>',iconSize:[16,16],iconAnchor:[8,8]});
-    const m=L.marker([p.lat,p.lng],{icon:icon}).addTo(catalogMap);
-    m.on("click",function(){closeAll();openDetail(p)});
-    mapMarkers.push(m);
+    var label=p.pricePin||p.price||"·";
+    if(label.length>12)label=label.slice(0,12);
+    var icon=pricePinIcon(label,false);
+    var marker=L.marker([p.lat,p.lng],{icon:icon,riseOnHover:true}).addTo(catalogMap);
+    marker.on("click",function(){
+      highlightMapProp(p.id);
+      var rail=document.getElementById("mapRail");
+      if(rail){
+        var card=rail.querySelector('.map-card[data-id="'+p.id+'"]');
+        if(card)card.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"});
+      }
+      // second tap / small delay open detail
+      marker.__rnTaps=(marker.__rnTaps||0)+1;
+      if(marker.__rnTaps>=2){closeAll();openDetail(p);marker.__rnTaps=0}
+      else setTimeout(function(){marker.__rnTaps=0},600);
+    });
+    mapMarkers.push({id:p.id,marker:marker,label:label});
     bounds.push([p.lat,p.lng]);
   });
-  if(bounds.length)catalogMap.fitBounds(bounds,{padding:[40,40],maxZoom:14});
+  renderMapRail(list);
+  if(bounds.length){
+    try{catalogMap.fitBounds(bounds,{padding:[36,36],maxZoom:14})}catch(e){}
+  }
+  setTimeout(function(){if(catalogMap)catalogMap.invalidateSize()},100);
 }
-
-/* iOS/Android browser chrome height changes */
-function fixViewport(){
-  try{
-    var h=(window.visualViewport&&window.visualViewport.height)||window.innerHeight;
-    document.documentElement.style.setProperty("--vh", (h*0.01)+"px");
-  }catch(e){}
-}
-fixViewport();
-window.addEventListener("resize",fixViewport,{passive:true});
-if(window.visualViewport)window.visualViewport.addEventListener("resize",fixViewport,{passive:true});
 
 function tryBuild(){
   if(typeof featured!=="undefined"&&featured&&featured.length){buildGallery();return true}
