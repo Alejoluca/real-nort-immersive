@@ -22,6 +22,8 @@ function mapsUrl(p){
 function driveOpt(u,w){
   if(!u)return u;
   w=w||1200;
+  if(w>1600)w=1600;
+  if(w<120)w=120;
   if(u.indexOf("lh3.googleusercontent.com/d/")!==-1)
     return u.replace(/=w\d+.*/,"")+"=w"+w;
   return u;
@@ -94,7 +96,7 @@ function ensureGridObs(){
   if(!hasIO()){
     gridImgObs={observe:function(el){
       const u=el.getAttribute("data-bg");
-      if(u)lazyBg(el,u,{mid:700,full:1100,priority:"low"});
+      if(u)lazyBg(el,u,{mid:480,full:800,priority:"low"});
     },unobserve:function(){},disconnect:function(){}};
     return gridImgObs;
   }
@@ -104,7 +106,7 @@ function ensureGridObs(){
       const el=en.target;
       const u=el.getAttribute("data-bg");
       if(u){
-        lazyBg(el,u,{mid:700,full:1100,priority:"low"});
+        lazyBg(el,u,{mid:480,full:800,priority:"low"});
         gridImgObs.unobserve(el);
       }
     });
@@ -149,7 +151,7 @@ function buildGallery(){
     var tmp=carousel[si];carousel[si]=carousel[sj];carousel[sj]=tmp;
   }
   const total=(allProperties&&allProperties.length)||featured.length;
-  const hero=coverImg(carousel[0],1100);
+  const hero=coverImg(carousel[0],1000);
   let h='<section class="slide active" data-index="0">'+
     '<div class="slide-bg loaded" style="background-image:url(\''+hero+'\')"></div>'+
     '<div class="slide-overlay"></div>'+
@@ -165,7 +167,7 @@ function buildGallery(){
   carousel.forEach(function(p,i){
     const n=(p.images&&p.images.length)||1;
     h+='<section class="slide" data-index="'+(i+1)+'" data-id="'+p.id+'">'+
-      '<div class="slide-bg" data-bg="'+coverImg(p,1100)+'"></div>'+
+      '<div class="slide-bg" data-bg="'+coverImg(p,1000)+'"></div>'+
       '<div class="slide-overlay"></div>'+
       '<div class="slide-content">'+
       '<span class="slide-tag">'+esc(p.tag||p.loc||"")+'</span>'+
@@ -222,7 +224,7 @@ function setupAfterBuild(){
       ents.forEach(function(e){
         if(e.isIntersecting){
           const u=e.target.getAttribute("data-bg");
-          if(u)lazyBg(e.target,u,{mid:700,full:1100,priority:"high"});
+          if(u)lazyBg(e.target,u,{mid:700,full:1200,priority:"high"});
         }
       });
     },{root:gallery,rootMargin:"180% 0px",threshold:0}).observe(el);
@@ -384,7 +386,7 @@ function loadDetailImg(i,prio){
   const el=document.querySelectorAll("#detailSlides .detail-slide")[i];
   if(!el||el.classList.contains("loaded")||el.dataset.loading==="1")return;
   const src=el.getAttribute("data-src");
-  if(src)lazyBg(el,src,{mid:800,full:1400,priority:prio||"auto"});
+  if(src)lazyBg(el,src,{mid:900,full:1400,priority:prio||"auto"});
 }
 
 function closeDetail(){
@@ -521,7 +523,7 @@ function renderGrid(){
   for(let i=0;i<filtered.length;i++){
     const p=filtered[i];
     const ni=(p.images&&p.images.length)||1;
-    var src=coverImg(p,900);
+    var src=coverImg(p,640);
     var raw=(p.images&&p.images[coverIdx(p)])||"";
     if(raw.indexOf("lh3.googleusercontent.com/d/")!==-1)raw=raw.replace(/=w\d+.*/,"");
     const eager=i<16;
@@ -567,7 +569,7 @@ function closeMapSheet(){
 function showMapSheet(p){
   var s=document.getElementById("mapSheet");
   if(!s||!p)return;
-  var img=coverImg(p,700);
+  var img=coverImg(p,640);
   var n=(p.images&&p.images.length)||0;
   s.innerHTML=
     '<button type="button" class="sheet-close" id="sheetClose" aria-label="Cerrar">×</button>'+
@@ -639,7 +641,7 @@ function renderMapRail(list){
   // Limit DOM for performance: show up to 24 cards in rail
   var slice=list.slice(0,24);
   rail.innerHTML=slice.map(function(p,i){
-    var img=coverImg(p,500);
+    var img=coverImg(p,480);
     return '<article class="map-card" data-id="'+p.id+'" data-i="'+i+'">'+
       '<div class="map-card-photo"'+(img?' style="background-image:url(\''+img+'\')"':'')+'></div>'+
       '<div class="map-card-body">'+
