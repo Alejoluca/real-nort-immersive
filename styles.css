@@ -324,155 +324,172 @@ body,button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
   #allOverlay #propGrid{grid-template-columns:repeat(3,1fr)!important}
 }
 
-/* ═══ AIRBNB-STYLE MAP ═══ */
-#allOverlay .map-panel{
-  flex:1!important;min-height:0!important;display:flex!important;flex-direction:column!important;
-  background:#0a0a0a!important;
+
+/* ═══ PREMIUM MAP v50 ═══ */
+#propGrid[hidden],#mapPanel[hidden],.map-panel[hidden]{
+  display:none!important;height:0!important;min-height:0!important;
+  overflow:hidden!important;flex:0 0 0!important;visibility:hidden!important;
+  pointer-events:none!important;position:absolute!important;
 }
-#allOverlay .map-panel[hidden]{display:none!important}
+#mapPanel:not([hidden]){
+  display:flex!important;flex-direction:column!important;
+  flex:1 1 auto!important;min-height:0!important;visibility:visible!important;
+  pointer-events:auto!important;position:relative!important;
+  background:#0b0b0c!important;
+}
 #allOverlay .map-layout{
-  flex:1;min-height:0;display:flex;flex-direction:column;position:relative;
+  flex:1 1 auto!important;min-height:0!important;display:flex!important;
+  flex-direction:column!important;position:relative!important;overflow:hidden!important;
 }
 #allOverlay .catalog-map{
-  flex:1!important;min-height:240px!important;width:100%!important;background:#111!important;
+  flex:1 1 auto!important;min-height:300px!important;width:100%!important;
+  background:#dfe5eb!important;
 }
+/* Floating map controls spacing */
+#allOverlay .leaflet-bottom.leaflet-right{bottom:calc(148px + env(safe-area-inset-bottom));margin-right:12px}
+#allOverlay .leaflet-control-zoom{
+  border:none!important;box-shadow:0 8px 24px rgba(0,0,0,.18)!important;border-radius:12px!important;overflow:hidden;
+}
+#allOverlay .leaflet-control-zoom a{
+  width:36px!important;height:36px!important;line-height:36px!important;
+  background:#fff!important;color:#111!important;border:none!important;
+  font-size:16px!important;
+}
+#allOverlay .leaflet-control-zoom a:hover{background:#f4f4f5!important}
+
+/* Price pins — soft pill, Airbnb-like but gold accent brand */
+.rn-marker{background:transparent!important;border:none!important}
+.rn-price-pin{
+  position:relative;
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:8px 12px;
+  background:#fff;
+  color:#111;
+  font:600 12.5px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,sans-serif;
+  letter-spacing:-.01em;
+  border-radius:980px;
+  box-shadow:0 2px 4px rgba(0,0,0,.08),0 8px 20px rgba(0,0,0,.14);
+  white-space:nowrap;
+  transform:translate(-50%,-100%);
+  transition:transform .18s cubic-bezier(.25,.1,.25,1),background .18s,color .18s,box-shadow .18s;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+.rn-price-pin::after{
+  content:"";
+  position:absolute;left:50%;bottom:-5px;
+  width:10px;height:10px;
+  background:inherit;
+  transform:translateX(-50%) rotate(45deg);
+  border-radius:2px;
+  box-shadow:2px 2px 4px rgba(0,0,0,.08);
+  z-index:-1;
+}
+.rn-price-pin:hover,.rn-price-pin.active{
+  background:#111;color:#fff;
+  transform:translate(-50%,-100%) scale(1.08);
+  box-shadow:0 6px 22px rgba(0,0,0,.28);
+  z-index:2;
+}
+.rn-price-pin.active{
+  background:#c9a87c;color:#0a0a0a;
+  box-shadow:0 8px 28px rgba(201,168,124,.45);
+}
+
+/* Horizontal result rail */
 #allOverlay .map-rail{
-  flex:0 0 auto;
-  display:flex;
-  gap:12px;
-  padding:12px 14px calc(14px + env(safe-area-inset-bottom));
-  overflow-x:auto;
-  -webkit-overflow-scrolling:touch;
-  scroll-snap-type:x mandatory;
-  background:linear-gradient(180deg,transparent,rgba(0,0,0,.92) 20%);
-  position:absolute;left:0;right:0;bottom:0;z-index:5;
-  scrollbar-width:none;
+  position:absolute!important;left:0;right:0;bottom:0;z-index:6;
+  display:flex!important;gap:12px;
+  padding:16px 14px calc(16px + env(safe-area-inset-bottom));
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+  scroll-snap-type:x mandatory;scrollbar-width:none;
+  background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.55) 35%,rgba(0,0,0,.88) 100%);
+  pointer-events:none;
 }
 #allOverlay .map-rail::-webkit-scrollbar{display:none}
 #allOverlay .map-card{
-  flex:0 0 260px;
-  scroll-snap-align:start;
-  background:#161616;
+  pointer-events:auto;
+  flex:0 0 min(78vw,300px);
+  scroll-snap-align:center;
+  background:rgba(22,22,24,.92);
+  -webkit-backdrop-filter:blur(20px) saturate(160%);
+  backdrop-filter:blur(20px) saturate(160%);
   border:1px solid rgba(255,255,255,.1);
-  border-radius:16px;
+  border-radius:18px;
   overflow:hidden;
   cursor:pointer;
-  display:flex;
-  flex-direction:column;
-  box-shadow:0 12px 32px rgba(0,0,0,.45);
-  transition:transform .2s,border-color .2s;
+  display:flex;flex-direction:column;
+  box-shadow:0 16px 40px rgba(0,0,0,.4);
+  transition:transform .25s cubic-bezier(.25,.1,.25,1),border-color .2s,box-shadow .25s;
 }
 #allOverlay .map-card.active{
   border-color:rgba(201,168,124,.55);
-  transform:translateY(-4px);
+  transform:translateY(-6px) scale(1.02);
+  box-shadow:0 20px 48px rgba(0,0,0,.5),0 0 0 1px rgba(201,168,124,.2);
 }
 #allOverlay .map-card-photo{
-  height:120px;background:#1a1a1a center/cover no-repeat;
+  height:128px;background:#1a1a1a center/cover no-repeat;position:relative;
 }
-#allOverlay .map-card-body{padding:10px 12px 12px}
-#allOverlay .map-card-loc{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#c9a87c;font-weight:600}
-#allOverlay .map-card-title{font-family:'Playfair Display',Georgia,serif;font-size:14px;color:#fff;margin:2px 0 4px;line-height:1.25}
-#allOverlay .map-card-price{font-size:13px;font-weight:600;color:#c9a87c}
-/* Price pins like Airbnb */
-.rn-price-pin{
-  background:#fff!important;
-  color:#111!important;
-  border:none!important;
-  border-radius:980px!important;
-  padding:6px 10px!important;
-  font:600 12px/1 -apple-system,BlinkMacSystemFont,Inter,sans-serif!important;
-  box-shadow:0 2px 8px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.06)!important;
-  white-space:nowrap!important;
-  transform:translate(-50%,-50%);
+#allOverlay .map-card-photo::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,.35));
+  pointer-events:none;
 }
-.rn-price-pin.active{
-  background:#111!important;
-  color:#fff!important;
-  box-shadow:0 4px 14px rgba(0,0,0,.4)!important;
-  transform:translate(-50%,-50%) scale(1.08);
+#allOverlay .map-card-body{padding:11px 13px 13px}
+#allOverlay .map-card-loc{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#c9a87c;font-weight:600}
+#allOverlay .map-card-title{
+  font-family:"Playfair Display",Georgia,serif;font-size:15px;color:#fff;
+  margin:3px 0 4px;line-height:1.25;letter-spacing:-.01em;
 }
-.rn-price-pin:hover{transform:translate(-50%,-50%) scale(1.06)}
-.leaflet-div-icon.rn-marker{background:transparent!important;border:none!important}
-@media(min-width:900px){
-  #allOverlay .map-layout{flex-direction:row}
-  #allOverlay .catalog-map{flex:1.4}
-  #allOverlay .map-rail{
-    position:relative;flex:0 0 320px;flex-direction:column;
-    overflow-x:hidden;overflow-y:auto;max-height:none;
-    background:#0a0a0a;border-left:1px solid rgba(255,255,255,.08);
-    padding:14px;gap:12px;
-  }
-  #allOverlay .map-card{flex:0 0 auto;width:100%}
-  #allOverlay .map-card-photo{height:140px}
+#allOverlay .map-card-price{font-size:13px;font-weight:600;color:rgba(245,245,247,.9)}
+
+/* Bottom property sheet */
+#mapSheet{
+  display:none;flex:0 0 auto;z-index:7;
+  background:rgba(12,12,14,.96);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+  backdrop-filter:blur(24px) saturate(180%);
+  border-top:1px solid rgba(255,255,255,.1);
+  box-shadow:0 -12px 40px rgba(0,0,0,.35);
+}
+#mapSheet.open{display:block;animation:sheetIn .28s cubic-bezier(.25,.1,.25,1)}
+@keyframes sheetIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+#mapSheet .sheet-inner{display:flex;gap:14px;padding:14px 16px calc(16px + env(safe-area-inset-bottom));align-items:stretch}
+#mapSheet .sheet-photo{
+  flex:0 0 132px;height:108px;border-radius:14px;
+  background:#1a1a1a center/cover no-repeat;cursor:pointer;
+  box-shadow:0 8px 20px rgba(0,0,0,.3);
+}
+#mapSheet .sheet-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+#mapSheet .sheet-loc{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#c9a87c;font-weight:600}
+#mapSheet .sheet-title{font-family:"Playfair Display",Georgia,serif;font-size:18px;color:#fff;line-height:1.2;letter-spacing:-.015em}
+#mapSheet .sheet-meta{font-size:12px;color:rgba(245,245,247,.48)}
+#mapSheet .sheet-price{font-size:14px;font-weight:600;color:#c9a87c;margin-top:4px}
+#mapSheet .sheet-actions{display:flex;gap:8px;margin-top:auto;padding-top:10px;flex-wrap:wrap}
+#mapSheet .sheet-actions .cta{
+  min-height:40px;padding:10px 16px;font-size:11px;border-radius:980px;
+}
+#mapSheet .sheet-close{
+  position:absolute;top:10px;right:12px;width:28px;height:28px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);
+  color:#fff;font-size:16px;line-height:1;cursor:pointer;
 }
 
-/* ═══ MAP VISIBILITY FIX ═══ */
-#propGrid[hidden],
-#mapPanel[hidden],
-.map-panel[hidden]{
-  display:none!important;
-  height:0!important;
-  min-height:0!important;
-  overflow:hidden!important;
-  flex:0!important;
-  visibility:hidden!important;
-  pointer-events:none!important;
-}
-#mapPanel:not([hidden]){
-  display:flex!important;
-  flex:1 1 auto!important;
-  min-height:0!important;
-  height:auto!important;
-  visibility:visible!important;
-  pointer-events:auto!important;
-  flex-direction:column!important;
-}
-#allOverlay .map-layout{
-  flex:1 1 auto!important;
-  min-height:280px!important;
-  height:100%!important;
-  display:flex!important;
-  flex-direction:column!important;
-  position:relative!important;
-}
-#allOverlay .catalog-map{
-  flex:1 1 auto!important;
-  min-height:320px!important;
-  height:100%!important;
-  width:100%!important;
-  background:#e8e8e8!important;
-}
-#allOverlay .map-rail{
-  flex:0 0 auto!important;
-  max-height:42vh;
-}
-/* Selected property sheet under map (Airbnb-like) */
-#mapSheet{
-  display:none;
-  flex:0 0 auto;
-  background:#111;
-  border-top:1px solid rgba(255,255,255,.1);
-  padding:0;
-  max-height:48vh;
-  overflow:auto;
-  -webkit-overflow-scrolling:touch;
-}
-#mapSheet.open{display:block}
-#mapSheet .sheet-inner{display:flex;gap:12px;padding:12px 14px 16px;align-items:stretch}
-#mapSheet .sheet-photo{
-  flex:0 0 140px;height:110px;border-radius:12px;
-  background:#1a1a1a center/cover no-repeat;
-}
-#mapSheet .sheet-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
-#mapSheet .sheet-loc{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#c9a87c;font-weight:600}
-#mapSheet .sheet-title{font-family:'Playfair Display',Georgia,serif;font-size:17px;color:#fff;line-height:1.2}
-#mapSheet .sheet-meta{font-size:12px;color:rgba(245,245,247,.5)}
-#mapSheet .sheet-price{font-size:14px;font-weight:600;color:#c9a87c;margin-top:4px}
-#mapSheet .sheet-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-#mapSheet .sheet-actions .cta{min-height:40px;padding:10px 16px;font-size:11px}
 @media(min-width:900px){
   #allOverlay .map-layout{flex-direction:row!important}
   #allOverlay .catalog-map{min-height:100%!important}
-  #allOverlay .map-rail{max-height:none;position:relative;flex:0 0 300px}
-  #mapSheet{max-height:none}
+  #allOverlay .map-rail{
+    position:relative!important;flex:0 0 340px!important;max-height:none!important;
+    flex-direction:column!important;overflow-x:hidden!important;overflow-y:auto!important;
+    background:#0c0c0e!important;border-left:1px solid rgba(255,255,255,.08);
+    padding:14px!important;gap:12px!important;pointer-events:auto!important;
+  }
+  #allOverlay .map-card{flex:0 0 auto;width:100%;scroll-snap-align:none}
+  #allOverlay .map-card-photo{height:150px}
+  #allOverlay .leaflet-bottom.leaflet-right{bottom:24px}
+  #mapSheet{border-left:1px solid rgba(255,255,255,.08)}
+}
+@media(prefers-reduced-motion:reduce){
+  .rn-price-pin,#allOverlay .map-card,#mapSheet.open{transition:none!important;animation:none!important}
 }
