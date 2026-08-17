@@ -1,13 +1,20 @@
 var featured=[],allProperties=[];
 (function(){
-  function boot(d){
-    featured=d.featured||[];
-    allProperties=d.allProperties||[];
+  function done(parts){
+    var feat=[], all=[], seen={};
+    parts.forEach(function(p){
+      if(p.featured) feat = p.featured;
+      (p.allProperties||[]).forEach(function(x){
+        if(x && x.id && !seen[x.id]){ seen[x.id]=1; all.push(x); }
+      });
+    });
+    featured = feat;
+    allProperties = all.length ? all : feat.slice();
     if(typeof window.__RN_ON_DATA==="function") window.__RN_ON_DATA();
   }
-  if(typeof fetch!=="undefined"){
-    fetch("catalog.json?v=20260817b").then(function(r){return r.json()}).then(boot).catch(function(e){
-      console.warn("[RN] catalog.json load failed", e);
-    });
-  }
+  Promise.all([
+    fetch("catalog-a.json?v=5").then(function(r){return r.json()}).catch(function(){return {}}),
+    fetch("catalog-b.json?v=5").then(function(r){return r.json()}).catch(function(){return {}}),
+    fetch("catalog-c.json?v=5").then(function(r){return r.json()}).catch(function(){return {}})
+  ]).then(done);
 })();
