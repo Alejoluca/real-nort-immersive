@@ -119,6 +119,7 @@ window.getFiltered=getFiltered;
 function esc(s){return String(s||"").replace(/</g,"").replace(/"/g,"&quot;")}
 
 function buildGallery(){
+  if(!gallery)return;
   if(!window.featured||!featured.length){
     gallery.innerHTML='<section class="slide active"><div class="slide-content" style="padding:4rem 2rem"><h1 class="slide-title">Cargando catálogo…</h1></div></section>';
     return;
@@ -175,6 +176,7 @@ function buildGallery(){
   setupAfterBuild();
 }
 
+var __rnSetupDone=false;
 function setupAfterBuild(){
   const slides=function(){return Array.from(gallery.querySelectorAll(".slide"))};
   progressRail.innerHTML="";
@@ -186,6 +188,9 @@ function setupAfterBuild(){
     d.onclick=function(){slides()[i].scrollIntoView({behavior:"smooth",block:"start"})};
     progressRail.appendChild(d);
   });
+
+  if(__rnSetupDone)return;
+  __rnSetupDone=true;
 
   /* Prefetch slide backgrounds early */
   gallery.querySelectorAll(".slide-bg[data-bg]").forEach(function(el){
@@ -345,6 +350,7 @@ function openAll(){
     window.filterBeds="all";
     window.filterRegion="all";
     window.catalogView="grid";
+    try{closeMapSheet()}catch(e){}
     var ov=document.getElementById("allOverlay");
     if(!ov){console.error("allOverlay missing");return}
     ov.classList.add("open");
@@ -367,6 +373,8 @@ function closeAll(){
   document.body.classList.remove("catalog-open");
   document.body.style.overflow="";
   if(gridImgObs){try{gridImgObs.disconnect()}catch(e){} gridImgObs=null}
+  try{closeMapSheet()}catch(e){}
+  window.catalogView="grid";
 }
 window.closeAll=closeAll;
 
