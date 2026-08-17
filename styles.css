@@ -1150,3 +1150,175 @@ body{
 #catalogMap .leaflet-pane,
 #catalogMap .leaflet-map-pane{z-index:auto}
 #catalogMap .leaflet-control-container{z-index:25!important}
+
+/* ═══ v56 FINAL cards + rail scroll ═══ */
+#propGrid:not([hidden]){
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:12px!important;
+  align-items:start!important;
+  padding:12px 12px 36px!important;
+  overflow-y:auto!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+@media(min-width:900px){
+  #propGrid:not([hidden]){grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:16px!important;padding:16px!important}
+}
+@media(min-width:1200px){
+  #propGrid:not([hidden]){grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+
+#propGrid .card{
+  display:block!important;
+  position:relative!important;
+  background:#161616!important;
+  border-radius:14px!important;
+  overflow:hidden!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  width:100%!important;
+  height:auto!important;
+  transform:none!important;
+  contain:none!important;
+  content-visibility:visible!important;
+  margin:0!important;
+}
+
+/* THE ratio lock: padding-bottom only — ignore aspect-ratio conflicts */
+#propGrid .card-photo{
+  display:block!important;
+  position:relative!important;
+  width:100%!important;
+  height:0!important;
+  padding:0 0 66.666% 0!important;
+  margin:0!important;
+  overflow:hidden!important;
+  background-color:#1c1c1e!important;
+  background-size:cover!important;
+  background-position:center center!important;
+  background-repeat:no-repeat!important;
+  min-height:0!important;
+  max-height:none!important;
+  aspect-ratio:auto!important;
+  flex:none!important;
+  contain:none!important;
+  content-visibility:visible!important;
+}
+#propGrid .card-photo::before,
+#propGrid .card-photo::after{content:none!important;display:none!important}
+#propGrid .card-photo .card-img{display:none!important}
+
+#propGrid .card-badge{
+  position:absolute!important;
+  left:8px!important;
+  bottom:8px!important;
+  top:auto!important;
+  right:auto!important;
+  z-index:2!important;
+  margin:0!important;
+}
+
+#propGrid .card-info{
+  display:block!important;
+  position:relative!important;
+  padding:10px 12px 12px!important;
+  background:#161616!important;
+  height:auto!important;
+  min-height:0!important;
+}
+#propGrid .card-loc{
+  margin:0 0 2px!important;
+  font-size:9px!important;
+  letter-spacing:.12em!important;
+  text-transform:uppercase!important;
+  color:#c9a87c!important;
+  font-weight:600!important;
+}
+#propGrid .card-title{
+  margin:0 0 4px!important;
+  font-size:14px!important;
+  line-height:1.25!important;
+  color:#fff!important;
+  font-weight:500!important;
+}
+#propGrid .card-sub{
+  margin:0 0 6px!important;
+  font-size:11px!important;
+  color:rgba(245,245,247,.45)!important;
+}
+#propGrid .card-bottom{
+  display:flex!important;
+  justify-content:space-between!important;
+  align-items:center!important;
+  gap:8px!important;
+}
+#propGrid .card-price{
+  font-size:12px!important;
+  font-weight:600!important;
+  color:#c9a87c!important;
+}
+#propGrid .card-link{
+  font-size:10px!important;
+  letter-spacing:.08em!important;
+  text-transform:uppercase!important;
+  color:rgba(245,245,247,.35)!important;
+}
+
+/* MAP RAIL — must receive touches and scroll horizontally */
+#mapPanel .map-rail,
+#mapRail,
+#allOverlay .map-rail{
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  bottom:0!important;
+  z-index:40!important;
+  display:flex!important;
+  flex-direction:row!important;
+  flex-wrap:nowrap!important;
+  gap:12px!important;
+  padding:12px 14px calc(14px + env(safe-area-inset-bottom))!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  -webkit-overflow-scrolling:touch!important;
+  scroll-snap-type:x mandatory!important;
+  pointer-events:auto!important;
+  touch-action:pan-x!important;
+  background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.55) 40%,rgba(0,0,0,.9) 100%)!important;
+}
+#mapPanel .map-rail .map-card,
+#mapRail .map-card,
+#allOverlay .map-card{
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+  flex:0 0 min(78vw, 300px)!important;
+  scroll-snap-align:center!important;
+  max-width:300px!important;
+}
+/* Prevent leaflet from eating bottom gestures */
+#catalogMap{
+  z-index:1!important;
+}
+#catalogMap .leaflet-container{
+  z-index:1!important;
+}
+@media(min-width:900px){
+  #mapPanel .map-rail,
+  #mapRail,
+  #allOverlay .map-rail{
+    position:relative!important;
+    flex-direction:column!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    touch-action:pan-y!important;
+    height:100%!important;
+    max-width:340px!important;
+    background:#0c0c0e!important;
+    border-left:1px solid rgba(255,255,255,.08)!important;
+  }
+  #mapPanel .map-rail .map-card,
+  #mapRail .map-card{
+    flex:0 0 auto!important;
+    max-width:none!important;
+    width:100%!important;
+  }
+}
