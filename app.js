@@ -70,8 +70,16 @@ function lazyBg(el,url,opts){
 
 /* Grid observer — large rootMargin for prefetch */
 let gridImgObs=null;
+function hasIO(){return typeof IntersectionObserver!=="undefined"}
 function ensureGridObs(){
   if(gridImgObs)return gridImgObs;
+  if(!hasIO()){
+    gridImgObs={observe:function(el){
+      const u=el.getAttribute("data-bg");
+      if(u)lazyBg(el,u,{mid:600,full:900,priority:"low"});
+    },unobserve:function(){},disconnect:function(){}};
+    return gridImgObs;
+  }
   gridImgObs=new IntersectionObserver(function(entries){
     entries.forEach(function(en){
       if(!en.isIntersecting)return;
@@ -203,17 +211,22 @@ function setupAfterBuild(){
   },{threshold:[.45]});
   slides().forEach(function(s){io.observe(s)});
 
-  gallery.addEventListener("wheel",function(e){
-    if(wheelLock){e.preventDefault();return}
-    if(Math.abs(e.deltaY)<10)return;
-    e.preventDefault();
-    const list=slides(),dir=e.deltaY>0?1:-1;
-    const n=Math.max(0,Math.min(list.length-1,currentIndex+dir));
-    if(n===currentIndex)return;
-    wheelLock=true;
-    list[n].scrollIntoView({behavior:"smooth",block:"start"});
-    setTimeout(function(){wheelLock=false},550);
-  },{passive:false});
+  /* Wheel snap only on desktop; touch/stylus use native scroll */
+  var finePointer=true;
+  try{finePointer=window.matchMedia("(hover:hover) and (pointer:fine)").matches}catch(e){}
+  if(finePointer){
+    gallery.addEventListener("wheel",function(e){
+      if(wheelLock){e.preventDefault();return}
+      if(Math.abs(e.deltaY)<10)return;
+      e.preventDefault();
+      const list=slides(),dir=e.deltaY>0?1:-1;
+      const n=Math.max(0,Math.min(list.length-1,currentIndex+dir));
+      if(n===currentIndex)return;
+      wheelLock=true;
+      list[n].scrollIntoView({behavior:"smooth",block:"start"});
+      setTimeout(function(){wheelLock=false},550);
+    },{passive:false});
+  }
 
   document.getElementById("logoHome").onclick=function(e){
     e.preventDefault();gallery.scrollTo({top:0,behavior:"smooth"});
@@ -462,6 +475,17 @@ function updateMapMarkers(list){
   });
   if(bounds.length)catalogMap.fitBounds(bounds,{padding:[40,40],maxZoom:14});
 }
+
+/* iOS/Android browser chrome height changes */
+function fixViewport(){
+  try{
+    var h=(window.visualViewport&&window.visualViewport.height)||window.innerHeight;
+    document.documentElement.style.setProperty("--vh", (h*0.01)+"px");
+  }catch(e){}
+}
+fixViewport();
+window.addEventListener("resize",fixViewport,{passive:true});
+if(window.visualViewport)window.visualViewport.addEventListener("resize",fixViewport,{passive:true});
 
 function tryBuild(){
   if(typeof featured!=="undefined"&&featured&&featured.length){buildGallery();return true}
