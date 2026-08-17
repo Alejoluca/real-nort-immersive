@@ -1,20 +1,3 @@
-var featured=[],allProperties=[];
-(function(){
-  function done(parts){
-    var feat=[], all=[], seen={};
-    parts.forEach(function(p){
-      if(p.featured) feat = p.featured;
-      (p.allProperties||[]).forEach(function(x){
-        if(x && x.id && !seen[x.id]){ seen[x.id]=1; all.push(x); }
-      });
-    });
-    featured = feat;
-    allProperties = all.length ? all : feat.slice();
-    if(typeof window.__RN_ON_DATA==="function") window.__RN_ON_DATA();
-  }
-  Promise.all([
-    fetch("catalog-a.json?v=10").then(function(r){return r.json()}).catch(function(){return {}}),
-    fetch("catalog-b.json?v=10").then(function(r){return r.json()}).catch(function(){return {}}),
-    fetch("catalog-c.json?v=10").then(function(r){return r.json()}).catch(function(){return {}})
-  ]).then(done);
-})();
+var featured=[{"id":"aldea-zama-2-rec-mareah-xa-an","name":"ALDEA ZAMA 2 REC Mareah Xa'an","loc":"Aldea Zama","beds":"2 Recámaras","bedsKey":"2","price":"$17,000 MXN / mes","tag":"Aldea Zama · 2 Recámaras","desc":"Departamento 2 recámaras en Mareah Xa'an, Aldea Zama. Completamente equipado: cocina de gas, lavadora y secadora. Renta incluye cuota condominal, agua y wifi. Ideal para vivir el día a día en el corazón de Aldea Zama. Agenda visita o pide más detalles por WhatsApp o email.","images":["https://lh3.googleusercontent.com/d/1fnsfVBAtXPn6FXl-__PQ4qf4xpUcJmsO=w1600","https://lh3.googleusercontent.com/d/1z8tFzhW4XaczIsQzx7b38Jhz5pQRoRsA=w1600","https://lh3.googleusercontent.com/d/1qRs2KSq3yzOlp9-aysH70Ap0U8GP-phU=w1600","https://lh3.googleusercontent.com/d/1N3jAiESkcEyIGb-CMADj5Pb_AwYM_YCX=w1600","https://lh3.googleusercontent.com/d/1Xt2POtxKwWNsoWFx43F-3WHuG_zEb3NY=w1600","https://lh3.googleusercontent.com/d/1BnYoxlp8mTLaImGwIeZFAMrfqX0IAmqg=w1600","https://lh3.googleusercontent.com/d/1jAPEAMABX9DOXd3Z8XG5gVGd8TIQCu54=w1600","https://lh3.googleusercontent.com/d/1NTgN_S-xOc3krQAHfRMiaG3HgGZ2m8xJ=w1600","https://lh3.googleusercontent.com/d/14EGbhl7aNCVzhXwM72vJocflVkQMAKHv=w1600","https://lh3.googleusercontent.com/d/1ey4FoUhTErfmq5YQ7mqOIOuhiVPc1iUb=w1600"],"driveFolderId":"1GqxWt7ipHBbvDlGYWQbiXojRuoKjpCZo","regionKey":"aldea-zama","maps":"https://www.google.com/maps/search/?api=1&query=ALDEA%20ZAMA%202%20REC%20Mareah%20Xa%27an%2C%20Aldea%20Zama%2C%20Tulum%2C%20Quintana%20Roo%2C%20Mexico","lat":20.2092,"lng":-87.4485}];
+var allProperties=featured.slice();
+if(typeof window.__RN_ON_DATA==="function")window.__RN_ON_DATA();
