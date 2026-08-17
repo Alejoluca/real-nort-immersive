@@ -76,7 +76,7 @@ function ensureGridObs(){
   if(!hasIO()){
     gridImgObs={observe:function(el){
       const u=el.getAttribute("data-bg");
-      if(u)lazyBg(el,u,{mid:600,full:900,priority:"low"});
+      if(u)lazyBg(el,u,{mid:700,full:1100,priority:"low"});
     },unobserve:function(){},disconnect:function(){}};
     return gridImgObs;
   }
@@ -86,7 +86,7 @@ function ensureGridObs(){
       const el=en.target;
       const u=el.getAttribute("data-bg");
       if(u){
-        lazyBg(el,u,{mid:600,full:900,priority:"low"});
+        lazyBg(el,u,{mid:700,full:1100,priority:"low"});
         gridImgObs.unobserve(el);
       }
     });
@@ -437,10 +437,10 @@ function renderGrid(){
     const ni=(p.images&&p.images.length)||1;
     let src=(p.images&&p.images[0])||"";
     if(src.indexOf("lh3.googleusercontent.com/d/")!==-1)src=src.replace(/=w\d+.*/,"");
-    const eager=i<12;
+    const eager=i<16;
     html+='<article class="card" data-id="'+p.id+'">';
     if(eager&&src){
-      html+='<div class="card-photo loaded" style="background-image:url(\''+driveOpt(src,700)+'\')"><span class="card-badge">'+ni+' fotos</span></div>';
+      html+='<div class="card-photo loaded" style="background-image:url(\''+driveOpt(src,900)+'\')"><span class="card-badge">'+ni+' fotos</span></div>';
     }else{
       html+='<div class="card-photo" data-bg="'+src+'"><span class="card-badge">'+ni+' fotos</span></div>';
     }
