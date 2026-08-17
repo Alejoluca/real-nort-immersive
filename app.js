@@ -363,6 +363,6 @@ function tryBuild(){
 }
 if(!tryBuild()){
   window.__RN_ON_DATA=function(){tryBuild()};
-  setTimeout(function(){if(!tryBuild())buildGallery()},3000);
+  setTimeout(function(){if(!tryBuild())buildGallery()},4000);
 }
 })();
