@@ -560,7 +560,7 @@ function renderGrid(){
 
   const grid=document.getElementById("propGrid");
   if(!grid)return;
-  grid.hidden=false;grid.style.display="grid";
+  grid.hidden=false;grid.className="rn-grid";grid.style.display="grid";
   if(!filtered.length){
     grid.innerHTML='<div class="grid-empty">Sin resultados con estos filtros</div>';
     return;
@@ -575,73 +575,26 @@ function renderGrid(){
     var raw=(p.images&&p.images[coverIdx(p)])||"";
     if(raw) raw=raw.replace(/=w\d+.*/,"");
     var eager=i<16;
-    html+='<article class="card" data-id="'+p.id+'" style="display:block;background:#161616;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.1)">';
+    html+='<article class="rn-card" data-id="'+p.id+'">';
     if(eager&&src){
-      html+='<div class="card-photo loaded" style="width:100%;height:158px;background:#1c1c1e url(\''+src+'\') center/cover no-repeat;position:relative"><span class="card-badge" style="position:absolute;left:8px;bottom:8px;z-index:2">'+ni+' fotos</span></div>';
+      html+='<div class="rn-card-media" style="background-image:url(\''+src+'\')"></div>';
     }else{
-      html+='<div class="card-photo" data-bg="'+raw+'" style="width:100%;height:158px;background-color:#1c1c1e;background-size:cover;background-position:center;background-repeat:no-repeat;position:relative"><span class="card-badge" style="position:absolute;left:8px;bottom:8px;z-index:2">'+ni+' fotos</span></div>';
+      html+='<div class="rn-card-media" data-bg="'+raw+'"></div>';
     }
-    html+='<div class="card-info" style="padding:10px 12px 12px;display:block">';
-    html+='<p class="card-loc" style="margin:0 0 2px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#c9a87c;font-weight:600">'+esc(p.loc||"Tulum")+'</p>';
-    html+='<h3 class="card-title" style="margin:0 0 4px;font-size:14px;line-height:1.25;color:#fff;font-weight:500">'+esc(p.name)+'</h3>';
-    html+='<p class="card-sub" style="margin:0 0 6px;font-size:11px;color:rgba(245,245,247,.45)">'+esc(p.beds||"")+(ni>1?" · "+ni+" fotos":"")+'</p>';
-    html+='<div class="card-bottom" style="display:flex;justify-content:space-between;align-items:center">';
-    html+='<span class="card-price" style="font-size:12px;font-weight:600;color:#c9a87c">'+esc(p.price||"Precio negociable")+'</span>';
-    html+='<span class="card-link" style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:rgba(245,245,247,.4)">Ver</span>';
-    html+='</div></div></article>';
+    html+='<div class="rn-card-body">';
+    html+='<p class="rn-card-loc">'+esc(p.loc||"Tulum")+'</p>';
+    html+='<h3 class="rn-card-name">'+esc(p.name)+'</h3>';
+    html+='<p class="rn-card-meta">'+esc(p.beds||"")+' · '+ni+' fotos</p>';
+    html+='<p class="rn-card-price">'+esc(p.price||"Precio negociable")+'</p>';
+    html+='</div></article>';
   }
   grid.innerHTML=html;
-  /* Force grid layout — beats any stylesheet conflict */
-  grid.style.setProperty("display","grid","important");
-  grid.style.setProperty("grid-auto-flow","row","important");
-  grid.style.setProperty("grid-template-columns","repeat(2, minmax(0, 1fr))","important");
-  grid.style.setProperty("gap","14px","important");
-  grid.style.setProperty("column-gap","14px","important");
-  grid.style.setProperty("row-gap","18px","important");
-  grid.style.setProperty("align-items","start","important");
-  grid.style.setProperty("padding","14px","important");
-  grid.style.setProperty("box-sizing","border-box","important");
-  grid.style.setProperty("width","100%","important");
-  if(window.matchMedia&&window.matchMedia("(min-width:900px)").matches){
-    grid.style.setProperty("grid-template-columns","repeat(3, minmax(0, 1fr))","important");
-    grid.style.setProperty("gap","18px","important");
-  }
-  if(window.matchMedia&&window.matchMedia("(min-width:1200px)").matches){
-    grid.style.setProperty("grid-template-columns","repeat(4, minmax(0, 1fr))","important");
-  }
-  grid.querySelectorAll(".card").forEach(function(card){
-    card.style.setProperty("display","block","important");
-    card.style.setProperty("width","100%","important");
-    card.style.setProperty("min-width","0","important");
-    card.style.setProperty("height","auto","important");
-    card.style.setProperty("overflow","hidden","important");
-    card.style.setProperty("border-radius","14px","important");
-    card.style.setProperty("background","#161616","important");
-  });
-  grid.querySelectorAll(".card-photo").forEach(function(el){
-    el.style.setProperty("display","block","important");
-    el.style.setProperty("width","100%","important");
-    el.style.setProperty("height","160px","important");
-    el.style.setProperty("min-height","160px","important");
-    el.style.setProperty("max-height","160px","important");
-    el.style.setProperty("padding","0","important");
-    el.style.setProperty("margin","0","important");
-    el.style.setProperty("aspect-ratio","auto","important");
-    el.style.setProperty("background-size","cover","important");
-    el.style.setProperty("background-position","center","important");
-    el.style.setProperty("background-repeat","no-repeat","important");
-    el.style.setProperty("position","relative","important");
-    el.style.setProperty("overflow","hidden","important");
-  });
-  grid.querySelectorAll(".card-info").forEach(function(el){
-    el.style.setProperty("display","block","important");
-    el.style.setProperty("padding","10px 12px 12px","important");
-    el.style.setProperty("height","auto","important");
-  });
+  /* Layout forced by rn-grid CSS — clean classes */
+  grid.className = "rn-grid";
   var obs=ensureGridObs();
-  grid.querySelectorAll(".card-photo[data-bg]").forEach(function(el){obs.observe(el)});
+  grid.querySelectorAll(".rn-card-media[data-bg]").forEach(function(el){obs.observe(el)});
   for(var pi=0;pi<Math.min(filtered.length,14);pi++){prefetchImg(coverImg(filtered[pi],480));}
-  grid.querySelectorAll(".card").forEach(function(card){
+  grid.querySelectorAll(".rn-card").forEach(function(card){
     card.onclick=function(){
       const p=findProp(card.getAttribute("data-id"));
       if(p){saveNavCtx();__rnCtx.overlay=true;var ov=document.getElementById("allOverlay");if(ov){ov.classList.remove("open");ov.style.setProperty("display","none","important")}document.body.classList.remove("catalog-open");openDetail(p)}
