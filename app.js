@@ -290,7 +290,9 @@ function openDetail(p){
     '<a class="cta" href="'+mapsUrl(p)+'" target="_blank" rel="noopener">Maps</a>'+
     '</div>';
 
-  document.getElementById("detail").classList.add("open");
+  var det=document.getElementById("detail");
+  det.classList.add("open");
+  det.style.display="flex";
   document.body.style.overflow="hidden";
   scrollEl.scrollTop=0;
 
@@ -331,29 +333,40 @@ function loadDetailImg(i,prio){
 }
 
 function closeDetail(){
-  document.getElementById("detail").classList.remove("open");
+  var det=document.getElementById("detail");
+  if(det){det.classList.remove("open");det.style.display="none"}
   document.body.style.overflow="";
   currentDetail=null;
-  if(detailIo){detailIo.disconnect();detailIo=null}
+  if(detailIo){try{detailIo.disconnect()}catch(e){} detailIo=null}
 }
 
 function openAll(){
-  window.filterBeds="all";
-  window.filterRegion="all";
-  window.catalogView="grid";
-  renderGrid();
-  setCatalogView("grid");
-  document.getElementById("allOverlay").classList.add("open");
-  document.body.classList.add("catalog-open");
-  document.body.style.overflow="hidden";
+  try{
+    window.filterBeds="all";
+    window.filterRegion="all";
+    window.catalogView="grid";
+    var ov=document.getElementById("allOverlay");
+    if(!ov){console.error("allOverlay missing");return}
+    ov.classList.add("open");
+    ov.style.display="flex";
+    document.body.classList.add("catalog-open");
+    document.body.style.overflow="hidden";
+    renderGrid();
+    setCatalogView("grid");
+  }catch(err){
+    console.error("openAll",err);
+    var ov=document.getElementById("allOverlay");
+    if(ov){ov.classList.add("open");ov.style.display="flex"}
+  }
 }
 window.openAll=openAll;
 
 function closeAll(){
-  document.getElementById("allOverlay").classList.remove("open");
+  var ov=document.getElementById("allOverlay");
+  if(ov){ov.classList.remove("open");ov.style.display="none"}
   document.body.classList.remove("catalog-open");
   document.body.style.overflow="";
-  if(gridImgObs){gridImgObs.disconnect();gridImgObs=null}
+  if(gridImgObs){try{gridImgObs.disconnect()}catch(e){} gridImgObs=null}
 }
 window.closeAll=closeAll;
 
@@ -424,7 +437,7 @@ function renderGrid(){
     const ni=(p.images&&p.images.length)||1;
     let src=(p.images&&p.images[0])||"";
     if(src.indexOf("lh3.googleusercontent.com/d/")!==-1)src=src.replace(/=w\d+.*/,"");
-    const eager=i<8;
+    const eager=i<12;
     html+='<article class="card" data-id="'+p.id+'">';
     if(eager&&src){
       html+='<div class="card-photo loaded" style="background-image:url(\''+driveOpt(src,700)+'\')"><span class="card-badge">'+ni+' fotos</span></div>';
