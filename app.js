@@ -1,6 +1,10 @@
 (async function(){
 const WA="529843237592",FB="https://www.facebook.com/alejo.lucatelliperren",EMAIL=(window.RN_EMAIL||"alejolucatelli@gmail.com").trim();
 
+function waMsg(p){let t="Hola, vi *Real Nort México* y me interesa:\n\n*"+((p&&p.name)||"Propiedad")+"*\n";if(p&&p.loc)t+="📍 "+p.loc+"\n";if(p&&p.price)t+="💰 "+p.price+"\n";return"https://wa.me/"+WA+"?text="+encodeURIComponent(t+"\n¿Más info?")}
+function emailMsg(p){return"mailto:"+EMAIL+"?subject="+encodeURIComponent("Consulta Real Nort")+"&body="+encodeURIComponent("Hola, me interesa "+((p&&p.name)||"propiedades en Tulum"))}
+function mapsUrl(p){return(p&&p.maps)||("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(((p&&p.name)||"")+", Tulum Mexico"))}
+
 function driveOpt(u,w){
   if(!u)return u;
   w=w||1200;
