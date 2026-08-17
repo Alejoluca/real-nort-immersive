@@ -34,37 +34,44 @@ function safeImg(p,i,w){
 
 /* Fast progressive BG: skip tiny on fast connections, sequential mid→full */
 function lazyBg(el,url,opts){
-  if(!el||el.classList.contains("loaded")||el.dataset.loading==="1")return;
-  el.dataset.loading="1";
+  if(!el||!url)return;
+  if(el.classList.contains("loaded")&&el.dataset.fullUrl===url)return;
   opts=opts||{};
-  const fullW=opts.full||1200;
-  const midW=opts.mid||700;
-  const skipTiny=opts.skipTiny!==false; // default skip tiny for speed
-  const priority=opts.priority||"auto";
-  const isDrive=url&&url.indexOf("lh3.googleusercontent.com/d/")!==-1;
-  const full=isDrive?driveOpt(url,fullW):url;
-  const mid=isDrive?driveOpt(url,midW):null;
+  var fullW=opts.full||1200;
+  var midW=opts.mid||700;
+  var priority=opts.priority||"auto";
+  var isDrive=url.indexOf("lh3.googleusercontent.com/d/")!==-1;
+  var full=isDrive?driveOpt(url,fullW):url;
+  var mid=isDrive?driveOpt(url,midW):null;
+  var gen=String((+el.dataset.gen||0)+1);
+  el.dataset.gen=gen;
+  el.dataset.loading="1";
 
-  function setBg(src,done){
-    const img=new Image();
+  function apply(src,isFinal){
+    if(el.dataset.gen!==gen)return;
+    el.style.backgroundImage="url('"+src+"')";
+    if(isFinal){
+      el.classList.add("loaded");
+      el.dataset.loading="0";
+      el.dataset.fullUrl=url;
+    }
+  }
+  function load(src,isFinal){
+    var img=new Image();
     img.decoding="async";
     if(priority==="high")try{img.fetchPriority="high"}catch(e){}
-    img.onload=function(){
-      if(el.dataset.loading!=="1"&&!done)return;
-      el.style.backgroundImage="url('"+src+"')";
-      if(done){el.classList.add("loaded");el.dataset.loading="0"}
-    };
+    img.onload=function(){apply(src,isFinal)};
     img.onerror=function(){
-      if(done){el.classList.add("loaded");el.dataset.loading="0"}
+      if(isFinal){el.classList.add("loaded");el.dataset.loading="0"}
+      else if(full)load(full,true);
     };
     img.src=src;
   }
-
   if(mid&&mid!==full){
-    setBg(mid,false);
-    setBg(full,true);
+    load(mid,false);
+    load(full,true);
   }else{
-    setBg(full,true);
+    load(full,true);
   }
 }
 
@@ -574,7 +581,7 @@ function ensureMap(){
 function pricePinIcon(label, active){
   return L.divIcon({
     className:"rn-marker",
-    html:'<div class="rn-price-pin'+(active?" active":"")+'">'+esc(label)+"</div>",
+    html:'<div class="rn-dot-pin'+(active?" active":"")+'" aria-hidden="true"></div>',
     iconSize:[0,0],
     iconAnchor:[0,0]
   });
