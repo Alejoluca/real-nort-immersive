@@ -1,0 +1,40 @@
+name: Sync Drive + Deploy
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 15 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Sync from Google Drive (optional)
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: |
+          if [ -n "$GOOGLE_API_KEY" ]; then
+            node scripts/sync-drive.mjs
+          else
+            echo "Sin GOOGLE_API_KEY — se usa data.json local"
+          fi
+      - name: Build data1.js + data2.js
+        run: node scripts/build-data.mjs
+      - name: Commit & push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data1.js data2.js data.js index.html catalog-*.json || true
+          if git diff --staged --quiet; then
+            echo "Sin cambios"
+          else
+            git commit -m "chore: sync catalog $(date -u +%Y-%m-%d)"
+            git push
+          fi
