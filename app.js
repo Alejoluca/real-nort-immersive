@@ -161,8 +161,20 @@ window.findProp=findProp;
 
 function getFiltered(){
   let s=(allProperties&&allProperties.length?allProperties:featured||[]).slice();
-  if(window.filterBeds!=="all")s=s.filter(function(p){return p.bedsKey===window.filterBeds});
-  if(window.filterRegion!=="all")s=s.filter(function(p){return p.regionKey===window.filterRegion});
+  if(window.filterBeds&&window.filterBeds!=="all"){
+    s=s.filter(function(p){
+      var k=p.bedsKey||"";
+      if(window.filterBeds==="4plus"){
+        if(k==="4"||k==="4plus"||k==="other")return true;
+        var m=String(p.beds||"").match(/(\d+)/);
+        return m && parseInt(m[1],10)>=4;
+      }
+      return k===window.filterBeds;
+    });
+  }
+  if(window.filterRegion&&window.filterRegion!=="all"){
+    s=s.filter(function(p){return p.regionKey===window.filterRegion});
+  }
   return s;
 }
 window.getFiltered=getFiltered;
@@ -518,7 +530,7 @@ function setCatalogView(v){
 function renderGrid(){
   const beds=[
     {key:"all",label:"Todas"},{key:"studio",label:"Estudios"},
-    {key:"1",label:"1 Rec"},{key:"2",label:"2 Rec"},{key:"3",label:"3 Rec"}
+    {key:"1",label:"1 Rec"},{key:"2",label:"2 Rec"},{key:"3",label:"3 Rec"},{key:"4plus",label:"4+ Rec"}
   ];
   const regions=[
     {key:"all",label:"Zonas"},{key:"aldea-zama",label:"Aldea Zama"},
@@ -559,22 +571,24 @@ function renderGrid(){
   for(let i=0;i<filtered.length;i++){
     const p=filtered[i];
     const ni=(p.images&&p.images.length)||1;
-    var src=coverImg(p,700);
-    var eager=i<12;
-    html+='<article class="card" data-id="'+p.id+'">';
+    var src=coverImg(p,720);
+    var raw=(p.images&&p.images[coverIdx(p)])||"";
+    if(raw) raw=raw.replace(/=w\d+.*/,"");
+    var eager=i<16;
+    html+='<article class="card" data-id="'+p.id+'" style="display:block;background:#161616;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.1)">';
     if(eager&&src){
-      html+='<div class="card-photo loaded" style="background-image:url(\''+src+'\')"><span class="card-badge">'+ni+' fotos</span></div>';
+      html+='<div class="card-photo loaded" style="width:100%;height:158px;background:#1c1c1e url(\''+src+'\') center/cover no-repeat;position:relative"><span class="card-badge" style="position:absolute;left:8px;bottom:8px;z-index:2">'+ni+' fotos</span></div>';
     }else{
-      var raw=(p.images&&p.images[coverIdx(p)])||"";
-      if(raw) raw=raw.replace(/=w\d+.*/,"");
-      html+='<div class="card-photo" data-bg="'+raw+'"><span class="card-badge">'+ni+' fotos</span></div>';
+      html+='<div class="card-photo" data-bg="'+raw+'" style="width:100%;height:158px;background-color:#1c1c1e;background-size:cover;background-position:center;background-repeat:no-repeat;position:relative"><span class="card-badge" style="position:absolute;left:8px;bottom:8px;z-index:2">'+ni+' fotos</span></div>';
     }
-    html+='<div class="card-info">';
-    html+='<p class="card-loc">'+esc(p.loc||"Tulum")+'</p>';
-    html+='<h3 class="card-title">'+esc(p.name)+'</h3>';
-    html+='<p class="card-sub">'+esc(p.beds||"")+(ni>1?" · "+ni+" fotos":"")+'</p>';
-    html+='<div class="card-bottom"><span class="card-price">'+esc(p.price||"Precio negociable")+'</span><span class="card-link">Ver</span></div>';
-    html+='</div></article>';
+    html+='<div class="card-info" style="padding:10px 12px 12px;display:block">';
+    html+='<p class="card-loc" style="margin:0 0 2px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#c9a87c;font-weight:600">'+esc(p.loc||"Tulum")+'</p>';
+    html+='<h3 class="card-title" style="margin:0 0 4px;font-size:14px;line-height:1.25;color:#fff;font-weight:500">'+esc(p.name)+'</h3>';
+    html+='<p class="card-sub" style="margin:0 0 6px;font-size:11px;color:rgba(245,245,247,.45)">'+esc(p.beds||"")+(ni>1?" · "+ni+" fotos":"")+'</p>';
+    html+='<div class="card-bottom" style="display:flex;justify-content:space-between;align-items:center">';
+    html+='<span class="card-price" style="font-size:12px;font-weight:600;color:#c9a87c">'+esc(p.price||"Precio negociable")+'</span>';
+    html+='<span class="card-link" style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:rgba(245,245,247,.4)">Ver</span>';
+    html+='</div></div></article>';
   }
   grid.innerHTML=html;
   var obs=ensureGridObs();
