@@ -977,3 +977,51 @@ body{
 .map-card-img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;opacity:1!important}
 .sheet-photo{position:relative!important;overflow:hidden!important}
 .sheet-img{width:100%!important;height:100%!important;object-fit:cover!important;opacity:1!important;display:block!important}
+
+/* ═══ ASPECT RATIO LOCK v54 ═══ */
+#propGrid:not([hidden]){
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:14px!important;
+  align-content:start!important;
+  align-items:start!important;
+}
+@media(min-width:900px){
+  #propGrid:not([hidden]){grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media(min-width:1200px){
+  #propGrid:not([hidden]){grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+#propGrid .card{
+  display:flex!important;
+  flex-direction:column!important;
+  height:auto!important;
+  min-height:auto!important;
+  max-height:none!important;
+  contain:none!important;
+  content-visibility:visible!important;
+}
+#propGrid .card-photo{
+  /* height comes from padding-bottom inline; do not override */
+  position:relative!important;
+  width:100%!important;
+  flex-shrink:0!important;
+  contain:none!important;
+  content-visibility:visible!important;
+}
+#propGrid .card-img{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  opacity:1!important;
+}
+#propGrid .card-info{
+  flex:1 1 auto!important;
+  min-height:auto!important;
+  height:auto!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+#mapSheet:not(.open){display:none!important}
