@@ -6,7 +6,8 @@
 <meta name="robots" content="noindex,nofollow"/>
 <meta name="theme-color" content="#000000"/>
 <title>NORT OS — Control</title>
-<link rel="stylesheet" href="panel.css?v=76"/>
+<link rel="stylesheet" href="panel.css?v=80"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
 </head>
 <body>
 <div id="boot" class="boot">Cargando NORT OS…</div>
@@ -15,13 +16,12 @@
   <div class="login-card">
     <p class="brand-kicker">Real Nort México</p>
     <h1>NORT OS</h1>
-    <p class="login-sub">Panel gratis · GitHub Pages · sin servidores de pago</p>
-    <label class="field"><span>Usuario</span><input id="loginUser" autocomplete="username" placeholder="admin o email"/></label>
+    <p class="login-sub">Panel de inventario, demanda y contactos · GitHub Pages</p>
+    <label class="field"><span>Usuario</span><input id="loginUser" autocomplete="username" placeholder="admin o usuario"/></label>
     <label class="field"><span>Contraseña</span><input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••"/></label>
     <p id="loginErr" class="err" hidden></p>
     <button type="button" class="btn gold" id="loginBtn">Entrar</button>
-    <p class="login-hint">Admin y propietarios · datos en este dispositivo</p>
-    
+    <p class="login-hint">Admin gestiona todo · Propietario solo consulta sus métricas</p>
   </div>
 </section>
 
@@ -41,6 +41,6 @@
   <main id="main" class="main"></main>
 </section>
 
-<script src="panel.js?v=76"></script>
+<script src="panel.js?v=80"></script>
 </body>
 </html>
