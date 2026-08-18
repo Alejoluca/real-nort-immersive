@@ -115,25 +115,46 @@
   }
 
   async function loadCatalog() {
-    var paths = ["../data.json", "../catalog-full.json", "../catalog.json"];
-    for (var i = 0; i < paths.length; i++) {
+    var map = {};
+    function addList(list) {
+      (list || []).forEach(function (p) {
+        if (p && p.id) map[p.id] = p;
+      });
+    }
+    for (var i = 1; i <= 3; i++) {
       try {
-        var res = await fetch(paths[i] + "?t=" + Date.now());
+        var res = await fetch("../data" + i + ".js?t=" + Date.now());
         if (!res.ok) continue;
-        var data = await res.json();
-        var map = {};
-        [].concat(data.featured || [], data.allProperties || []).forEach(function (p) {
-          if (p && p.id) map[p.id] = p;
-        });
-        catalog = Object.keys(map).map(function (k) { return map[k]; });
-        catalog.forEach(function (p) { ensureProp(p.id); });
-        saveState();
-        return;
+        var text = await res.text();
+        var marker = "window.__RN_P" + i + "=";
+        var idx = text.indexOf(marker);
+        if (idx < 0) continue;
+        var jsonPart = text.slice(idx + marker.length);
+        var cut = jsonPart.search(/;[\s\n]*window\.|;[\s\n]*var |;[\s\n]*if\(/);
+        if (cut > 0) jsonPart = jsonPart.slice(0, cut);
+        jsonPart = jsonPart.replace(/;+\s*$/, "");
+        addList(JSON.parse(jsonPart));
       } catch (e) {}
     }
-    try {
-      catalog = JSON.parse(localStorage.getItem("nort_os_catalog_cache") || "[]");
-    } catch (e) { catalog = []; }
+    if (Object.keys(map).length < 10) {
+      var paths = ["../catalog-a.json", "../catalog-b.json", "../catalog-c.json", "../catalog.json"];
+      for (var j = 0; j < paths.length; j++) {
+        try {
+          var r2 = await fetch(paths[j] + "?t=" + Date.now());
+          if (!r2.ok) continue;
+          var data = await r2.json();
+          addList(data.featured);
+          addList(data.allProperties);
+        } catch (e) {}
+      }
+    }
+    catalog = Object.keys(map).map(function (k) { return map[k]; });
+    catalog.sort(function (a, b) {
+      return String(a.name || a.id).localeCompare(String(b.name || b.id), "es");
+    });
+    catalog.forEach(function (p) { ensureProp(p.id); });
+    try { localStorage.setItem("nort_os_catalog_cache", JSON.stringify(catalog)); } catch (e) {}
+    saveState();
   }
 
   // ——— UI ———
@@ -220,9 +241,16 @@
 
   function renderInventory() {
     var owners = state.users.filter(function (u) { return u.role === "owner" && u.active !== false; });
-    var html = '<p class="section-title">Inventario (' + catalog.length + ')</p>';
+    var q = (window.__invQ || "").toLowerCase();
+    var list = catalog.filter(function (p) {
+      if (!q) return true;
+      var hay = (p.name + " " + p.id + " " + (p.loc || "") + " " + (p.beds || "")).toLowerCase();
+      return hay.indexOf(q) >= 0;
+    });
+    var html = '<p class="section-title">Inventario (' + list.length + " / " + catalog.length + ')</p>';
+    html += '<div class="form-row"><label style="flex:1">Buscar<input id="invSearch" type="search" placeholder="Nombre, zona, id…" value="' + esc(window.__invQ || "") + '"/></label></div>';
     html += '<div class="table-wrap"><table><thead><tr><th>Propiedad</th><th>Status</th><th>Owner</th><th>Pulse</th><th>Acciones</th></tr></thead><tbody>';
-    catalog.forEach(function (p) {
+    list.forEach(function (p) {
       var meta = ensureProp(p.id);
       var pulse = pulseFor(p.id);
       html += '<tr data-id="' + esc(p.id) + '"><td><strong>' + esc(p.name) + '</strong><div class="meta">' + esc(p.id) + '</div></td>';
@@ -240,6 +268,7 @@
     });
     html += "</tbody></table></div>";
     $("main").innerHTML = html;
+    var invS=$("invSearch"); if(invS){invS.oninput=function(){window.__invQ=this.value;renderInventory();};}
 
     $("main").querySelectorAll("tr[data-id]").forEach(function (row) {
       var id = row.getAttribute("data-id");
