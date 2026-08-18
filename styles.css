@@ -1732,3 +1732,12 @@ body{
   color: #c9a87c !important;
   font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif !important;
 }
+
+/* Owner / admin login entry */
+#btnOwnerLogin{
+  border-color: rgba(201,168,124,.45)!important;
+  color: #c9a87c!important;
+}
+#btnOwnerLogin:hover{
+  background: rgba(201,168,124,.12)!important;
+}
