@@ -2,7 +2,8 @@
 (function () {
   "use strict";
 
-  var API = (window.NORT_API || localStorage.getItem("nort_api") || "").replace(/\/$/, "");
+  var DEFAULT_API = "https://real-nort-immersive.onrender.com";
+  var API = (window.NORT_API || localStorage.getItem("nort_api") || DEFAULT_API || "").replace(/\/$/, "");
   var STATE_KEY = "nort_os_v1";
   var EVENTS_KEY = "nort_os_events_v1";
   var SESSION_KEY = "nort_os_session_v1";
@@ -438,7 +439,7 @@
     var apiInput = $("apiConfig");
     var saveApi = $("saveApiBtn");
     if (apiInput) {
-      apiInput.value = localStorage.getItem("nort_api") || "";
+      apiInput.value = localStorage.getItem("nort_api") || DEFAULT_API || "";
     }
     if (saveApi) {
       saveApi.onclick = function () {
