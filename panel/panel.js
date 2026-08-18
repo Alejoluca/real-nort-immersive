@@ -7,6 +7,8 @@
   var SESSION_KEY = "nort_os_session_v1";
   var CONTENT_KEY = "nort_os_content_v1";
   var GH_TOKEN_KEY = "nort_gh_token";
+  function getGhToken(){ return sessionStorage.getItem(GH_TOKEN_KEY) || localStorage.getItem(GH_TOKEN_KEY) || ""; }
+  function setGhToken(t){ if(t){ localStorage.setItem(GH_TOKEN_KEY,t); sessionStorage.setItem(GH_TOKEN_KEY,t);} }
   var charts = [];
   var periodDays = 7;
 
@@ -728,22 +730,23 @@
       saveContent();
       rebuildCatalog();
       window.__editImgs = null; window.__editDraft = null; window.__editId = null;
-      var token = sessionStorage.getItem(GH_TOKEN_KEY);
+      var token = getGhToken();
       if (token) {
         window.__nortQuietPub = true;
         publishToGitHub().then(function () {
           window.__nortSync.status = "synced";
           window.__nortSync.lastPub = new Date().toISOString();
+          alert("Guardado y publicado en el sitio");
           if (goPublish) go("tools");
           else go("edit", data.id);
-        }).catch(function () {
-          alert("Guardado local. Publicación falló — revisá token en Publicar.");
+        }).catch(function (err) {
+          alert("Guardado local. Falló publicar: " + (err && err.message || "revisá token"));
           if (goPublish) go("tools");
           else go("edit", data.id);
         });
         return;
       }
-      alert("Guardado en este dispositivo. Andá a Publicar para que el equipo y el sitio lo vean.");
+      alert("Guardado local. Una sola vez: andá a Publicar, pegá el token GitHub y guardalo. Después cada edición se publica sola.");
       if (goPublish) go("tools");
       else go("edit", data.id);
     }
@@ -759,8 +762,14 @@
         delete content.props[p.id];
         saveContent();
         rebuildCatalog();
-        alert("Marcada para quitar. Publicá para aplicar en el sitio.");
-        go("inventory");
+        if (getGhToken()) {
+          window.__nortQuietPub = true;
+          publishToGitHub().then(function(){ alert("Quitada y publicada"); go("inventory"); })
+            .catch(function(){ alert("Quitada local. Publicá manualmente."); go("inventory"); });
+        } else {
+          alert("Quitada local. Configurá token en Publicar para auto-subir.");
+          go("inventory");
+        }
       };
     }
   }
@@ -916,9 +925,9 @@
   }
 
   async function publishToGitHub() {
-    var token = sessionStorage.getItem(GH_TOKEN_KEY) || $("ghToken") && $("ghToken").value.trim();
+    var token = ($("ghToken") && $("ghToken").value.trim()) || getGhToken();
     if (!token) return alert("Pegá un GitHub token con permiso repo (contents:write)");
-    sessionStorage.setItem(GH_TOKEN_KEY, token);
+    setGhToken(token);
     var payload = {
       version: content.version || 1,
       updatedAt: new Date().toISOString(),
@@ -979,7 +988,7 @@
     html += '<span class="alert-chip ok">' + nCustom + " nuevas</span>";
     html += '<span class="alert-chip warn">' + nDel + " quitadas</span></div>";
     html += '<label class="field"><span>GitHub token (solo en esta sesión)</span>';
-    html += '<input id="ghToken" type="password" placeholder="ghp_..." value="' + esc(sessionStorage.getItem(GH_TOKEN_KEY) || "") + '"/></label>';
+    html += '<input id="ghToken" type="password" placeholder="ghp_..." value="' + esc(getGhToken()) + '"/></label>';
     html += '<div class="toolbar" style="margin-top:12px">';
     html += '<button class="btn gold" id="btnPublish">Publicar ahora</button>';
     html += '<button class="btn ghost sm" id="btnPull">Traer del sitio</button>';
@@ -997,7 +1006,14 @@
     html += '<button class="btn gold sm" id="savePass">Cambiar</button></div>';
 
     $("main").innerHTML = html;
-    $("btnPublish").onclick = function () { publishToGitHub(); };
+    $("btnPublish").onclick = function () {
+      var t = $("ghToken") && $("ghToken").value.trim();
+      if (t) setGhToken(t);
+      publishToGitHub();
+    };
+    if ($("ghToken")) {
+      $("ghToken").onchange = function(){ if (this.value.trim()) setGhToken(this.value.trim()); };
+    }
     if ($("btnPull")) $("btnPull").onclick = async function () {
       var r = await pullRemoteContent();
       window.__nortSync.lastPull = r;
