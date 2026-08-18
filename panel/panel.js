@@ -1,10 +1,12 @@
-/* NORT OS — precision control panel (GitHub Pages) */
+/* NORT OS — CMS + control de precisión (GitHub Pages) */
 (function () {
   "use strict";
 
   var STATE_KEY = "nort_os_v1";
   var EVENTS_KEY = "nort_os_events_v1";
   var SESSION_KEY = "nort_os_session_v1";
+  var CONTENT_KEY = "nort_os_content_v1";
+  var GH_TOKEN_KEY = "nort_gh_token";
   var charts = [];
   var periodDays = 7;
 
@@ -29,6 +31,24 @@
     for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
     return (h >>> 0).toString(16);
   }
+  function slugify(s) {
+    return String(s || "prop").toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "prop";
+  }
+  function bedsKeyFrom(beds) {
+    var m = String(beds || "").match(/(\d+)/);
+    if (m) return m[1];
+    if (/estudio/i.test(beds || "")) return "1";
+    return "2";
+  }
+  function pricePinFrom(price) {
+    var m = String(price || "").replace(/,/g, "").match(/(\d+)/);
+    if (!m) return "·";
+    var n = Number(m[1]);
+    if (n >= 1000) return "$" + Math.round(n / 1000) + "k";
+    return "$" + n;
+  }
 
   function defaultState() {
     return {
@@ -52,6 +72,7 @@
     } catch (e) { return defaultState(); }
   }
   function saveState() { localStorage.setItem(STATE_KEY, JSON.stringify(state)); }
+
   function loadEvents() {
     try { return JSON.parse(localStorage.getItem(EVENTS_KEY) || "[]"); } catch (e) { return []; }
   }
@@ -63,9 +84,27 @@
     var list = loadEvents(); list.push(evt); saveEvents(list); return evt;
   }
 
+  function defaultContent() {
+    return { version: 1, updatedAt: null, deleted: [], props: {}, custom: [], livePreview: true };
+  }
+  function loadContent() {
+    try {
+      var c = JSON.parse(localStorage.getItem(CONTENT_KEY) || "null");
+      if (!c) return defaultContent();
+      c.props = c.props || {}; c.custom = c.custom || []; c.deleted = c.deleted || [];
+      return c;
+    } catch (e) { return defaultContent(); }
+  }
+  function saveContent() {
+    content.updatedAt = new Date().toISOString();
+    localStorage.setItem(CONTENT_KEY, JSON.stringify(content));
+  }
+
   var state = loadState();
+  var content = loadContent();
   var session = null;
   try { session = JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null"); } catch (e) {}
+
   function setSession(u) {
     session = u ? { id: u.id, role: u.role, name: u.name, username: u.username } : null;
     if (session) sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
@@ -76,6 +115,7 @@
     return state.users.find(function (u) { return u.id === session.id && u.active !== false; }) || null;
   }
 
+  var baseCatalog = [];
   var catalog = [];
   var route = "home";
   var routeParam = null;
@@ -85,13 +125,47 @@
     if (!state.props[id]) state.props[id] = { status: "published", ownerId: null, note: "" };
     return state.props[id];
   }
+
+  function getPatch(id) {
+    return (content.props && content.props[id]) || null;
+  }
+
+  function resolvedProp(base) {
+    if (!base || !base.id) return null;
+    if ((content.deleted || []).indexOf(base.id) >= 0) return null;
+    var patch = getPatch(base.id) || {};
+    var meta = ensureProp(base.id);
+    var m = {};
+    for (var k in base) if (Object.prototype.hasOwnProperty.call(base, k)) m[k] = base[k];
+    for (var j in patch) if (patch[j] !== undefined && patch[j] !== null) m[j] = patch[j];
+    if (!m.status) m.status = meta.status || "published";
+    if (meta.ownerId && !m.ownerId) m.ownerId = meta.ownerId;
+    if (meta.note && !m.note) m.note = meta.note;
+    return m;
+  }
+
+  function rebuildCatalog() {
+    var map = {};
+    baseCatalog.forEach(function (p) {
+      var r = resolvedProp(p);
+      if (r) map[r.id] = r;
+    });
+    (content.custom || []).forEach(function (p) {
+      if (!p || !p.id) return;
+      if ((content.deleted || []).indexOf(p.id) >= 0) return;
+      map[p.id] = p;
+    });
+    catalog = Object.keys(map).map(function (k) { return map[k]; });
+    catalog.sort(function (a, b) { return String(a.name || "").localeCompare(String(b.name || ""), "es"); });
+    catalog.forEach(function (p) { ensureProp(p.id); });
+  }
+
   function propById(id) { return catalog.find(function (p) { return p.id === id; }); }
   function ownerName(id) {
     if (!id) return "Sin dueño";
     var u = state.users.find(function (x) { return x.id === id; });
     return u ? (u.name || u.username) : "—";
   }
-  function ownerOf(p) { return ensureProp(p.id).ownerId; }
 
   function metricsFor(propertyId, days) {
     days = days == null ? periodDays : days;
@@ -108,7 +182,7 @@
     var label = score >= 70 ? "Ardiente" : score >= 40 ? "Caliente" : score >= 15 ? "Tibio" : "Frío";
     return {
       views: views, card: card, map: map, clicks: clicks, wa: wa, email: email, intent: intent,
-      visits: visits, rented: rented, score: score, label: label, events: ev,
+      visits: visits, rented: rented, score: score, label: label,
       convView: pct(views, clicks || views), convIntent: pct(intent, views || clicks), convVisit: pct(visits, intent || views)
     };
   }
@@ -193,20 +267,8 @@
         add(JSON.parse(part.replace(/;+\s*$/, "")));
       } catch (e) {}
     }
-    if (Object.keys(map).length < 10) {
-      for (var j = 0; j < 4; j++) {
-        var paths = ["../catalog-a.json", "../catalog-b.json", "../catalog-c.json", "../catalog.json"];
-        try {
-          var r = await fetch(paths[j] + "?t=" + Date.now());
-          if (!r.ok) continue;
-          var d = await r.json();
-          add(d.featured); add(d.allProperties);
-        } catch (e) {}
-      }
-    }
-    catalog = Object.keys(map).map(function (k) { return map[k]; });
-    catalog.sort(function (a, b) { return String(a.name || "").localeCompare(String(b.name || ""), "es"); });
-    catalog.forEach(function (p) { ensureProp(p.id); });
+    baseCatalog = Object.keys(map).map(function (k) { return map[k]; });
+    rebuildCatalog();
     saveState();
   }
 
@@ -225,10 +287,10 @@
 
   function renderNav() {
     var items = user.role === "admin"
-      ? [["home", "General"], ["inventory", "Inventario"], ["owners", "Propietarios"], ["activity", "Actividad"], ["tools", "Herramientas"]]
-      : [["home", "Resumen"], ["myprops", "Mis propiedades"], ["activity", "Actividad"]];
+      ? [["home", "General"], ["inventory", "Inventario"], ["owners", "Owners"], ["activity", "Actividad"], ["tools", "Publicar"]]
+      : [["home", "Resumen"], ["myprops", "Mis props"], ["activity", "Actividad"]];
     $("nav").innerHTML = items.map(function (it) {
-      var active = route === it[0] || (route === "detail" && (it[0] === "inventory" || it[0] === "myprops"));
+      var active = route === it[0] || (route === "edit" && it[0] === "inventory") || (route === "detail" && (it[0] === "inventory" || it[0] === "myprops"));
       return '<button type="button" data-route="' + it[0] + '" class="' + (active ? "active" : "") + '">' + it[1] + "</button>";
     }).join("");
     $("nav").querySelectorAll("button").forEach(function (b) {
@@ -242,16 +304,15 @@
   function statusClass(st) { return "status " + (st || "published"); }
   function visibleCatalog() {
     if (user.role === "admin") return catalog.slice();
-    return catalog.filter(function (p) { return ensureProp(p.id).ownerId === user.id; });
+    return catalog.filter(function (p) { return ensureProp(p.id).ownerId === user.id || p.ownerId === user.id; });
   }
   function idSet(list) {
     var o = {}; list.forEach(function (p) { o[p.id] = true; }); return o;
   }
   function periodTabs() {
-    return '<div class="period-tabs">' +
-      [7, 30, 90].map(function (d) {
-        return '<button type="button" data-p="' + d + '" class="' + (periodDays === d ? "active" : "") + '">' + d + "d</button>";
-      }).join("") + "</div>";
+    return '<div class="period-tabs">' + [7, 30, 90].map(function (d) {
+      return '<button type="button" data-p="' + d + '" class="' + (periodDays === d ? "active" : "") + '">' + d + "d</button>";
+    }).join("") + "</div>";
   }
   function bindPeriod() {
     $("main").querySelectorAll(".period-tabs button").forEach(function (b) {
@@ -262,19 +323,27 @@
   function propCard(p, m) {
     m = m || metricsFor(p.id);
     var meta = ensureProp(p.id);
+    var st = p.status || meta.status || "published";
     var img = (p.images && p.images[0]) ? String(p.images[0]).replace(/=w\d+/, "=w700") : "";
-    return '<article class="pcard" data-open="' + esc(p.id) + '">' +
-      '<div class="pcard-media" style="background-image:url(\'' + esc(img) + '\')"></div><div class="pcard-body">' +
-      '<div class="pcard-top"><h3>' + esc(p.name) + '</h3><span class="' + statusClass(meta.status) + '">' + esc(meta.status) + "</span></div>" +
+    return '<article class="pcard">' +
+      '<div class="pcard-media" style="background-image:url(\'' + esc(img) + '\')" data-open="' + esc(p.id) + '"></div><div class="pcard-body">' +
+      '<div class="pcard-top"><h3 data-open="' + esc(p.id) + '">' + esc(p.name) + '</h3><span class="' + statusClass(st) + '">' + esc(st) + "</span></div>" +
       '<div class="meta">' + esc(p.loc || "") + " · " + esc(p.beds || "") + "</div>" +
+      '<div class="meta" style="color:#e8d5b5;font-weight:500">' + esc(p.price || "Precio negociable") + "</div>" +
       '<div class="pulse-row"><div class="pulse-ring" style="--p:' + m.score + '"><span>' + m.score + "</span></div>" +
-      '<div class="pulse-label">' + esc(m.label) + "<br/>" + m.views + " fichas · " + m.intent + " consultas · " + m.visits + " visitas</div></div>" +
-      (user.role === "admin" ? '<div class="meta">Owner: ' + esc(ownerName(meta.ownerId)) + "</div>" : "") +
-      '<button type="button" class="btn ghost sm" data-open="' + esc(p.id) + '">Ficha completa</button></div></article>';
+      '<div class="pulse-label">' + esc(m.label) + "<br/>" + m.views + " · " + m.intent + " · " + m.visits + "</div></div>" +
+      (user.role === "admin" ? '<div class="meta">Owner: ' + esc(ownerName(meta.ownerId || p.ownerId)) + "</div>" : "") +
+      '<div class="pcard-actions">' +
+      '<button type="button" class="btn ghost sm" data-open="' + esc(p.id) + '">Métricas</button>' +
+      (user.role === "admin" ? '<button type="button" class="btn gold sm" data-edit="' + esc(p.id) + '">Editar</button>' : "") +
+      "</div></div></article>";
   }
-  function bindOpen() {
+  function bindCards() {
     $("main").querySelectorAll("[data-open]").forEach(function (el) {
-      el.onclick = function (e) { e.preventDefault(); go("detail", el.getAttribute("data-open")); };
+      el.onclick = function (e) { e.preventDefault(); e.stopPropagation(); go("detail", el.getAttribute("data-open")); };
+    });
+    $("main").querySelectorAll("[data-edit]").forEach(function (el) {
+      el.onclick = function (e) { e.preventDefault(); e.stopPropagation(); go("edit", el.getAttribute("data-edit")); };
     });
   }
 
@@ -287,248 +356,400 @@
     return { views: views, clicks: clicks, wa: wa, email: email, intent: wa + email, visits: visits };
   }
 
-  /* HOME */
   function renderHome() {
     var scope = visibleCatalog();
     var ids = user.role === "admin" ? null : idSet(scope);
     var m = scopeMetrics(ids);
-    var unassigned = catalog.filter(function (p) { return !ensureProp(p.id).ownerId; }).length;
-    var paused = scope.filter(function (p) { return ensureProp(p.id).status === "paused"; }).length;
-    var rented = scope.filter(function (p) { return ensureProp(p.id).status === "rented"; }).length;
-    var published = scope.filter(function (p) { var s = ensureProp(p.id).status; return s === "published" || s === "reserved"; }).length;
-
+    var unassigned = catalog.filter(function (p) { return !(ensureProp(p.id).ownerId || p.ownerId); }).length;
+    var paused = scope.filter(function (p) { return (p.status || ensureProp(p.id).status) === "paused"; }).length;
+    var rented = scope.filter(function (p) { return (p.status || ensureProp(p.id).status) === "rented"; }).length;
+    var published = scope.filter(function (p) {
+      var s = p.status || ensureProp(p.id).status || "published";
+      return s === "published" || s === "reserved";
+    }).length;
     var ranked = scope.map(function (p) { return { p: p, m: metricsFor(p.id) }; })
       .sort(function (a, b) { return b.m.score - a.m.score; });
 
     var html = periodTabs();
     html += '<div class="alert-strip">';
-    html += '<span class="alert-chip ok">' + scope.length + " propiedades</span>";
+    html += '<span class="alert-chip ok">' + scope.length + " props</span>";
     if (user.role === "admin" && unassigned) html += '<span class="alert-chip warn">' + unassigned + " sin dueño</span>";
     if (paused) html += '<span class="alert-chip warn">' + paused + " pausadas</span>";
     html += '<span class="alert-chip">' + published + " visibles</span>";
     html += '<span class="alert-chip">' + rented + " rentadas</span></div>";
-
-    html += '<div class="kpi-row">';
-    html += kpi("Fichas", m.views, "Inmersiones " + periodDays + "d");
-    html += kpi("Clicks", m.clicks, "Card + mapa");
-    html += kpi("Consultas", m.intent, "WA " + m.wa + " · Mail " + m.email);
-    html += kpi("Visitas", m.visits, "Coordinadas");
-    html += "</div>";
-    html += '<div class="kpi-row">';
-    html += kpi("Conv. ficha", pct(m.views, m.clicks || m.views) + "%", "Click → ficha");
-    html += kpi("Conv. consulta", pct(m.intent, m.views || 1) + "%", "Ficha → WA/mail");
-    html += kpi("Conv. visita", pct(m.visits, m.intent || 1) + "%", "Consulta → visita");
-    html += kpi("Owners", state.users.filter(function (u) { return u.role === "owner" && u.active !== false; }).length, "Activos");
-    html += "</div>";
-
-    html += '<div class="charts-row"><div class="panel-block chart-card"><h2>Tendencia 14 días</h2><div class="chart-wrap"><canvas id="cTrend"></canvas></div></div>';
-    html += '<div class="panel-block chart-card"><h2>Mix de demanda</h2><div class="chart-wrap sm"><canvas id="cMix"></canvas></div></div></div>';
-
-    html += '<p class="section-title">Ranking Pulse</p><div class="grid-cards">';
-    ranked.slice(0, 15).forEach(function (r) { html += propCard(r.p, r.m); });
+    html += '<div class="kpi-row">' + kpi("Fichas", m.views, periodDays + "d") + kpi("Clicks", m.clicks, "Card+mapa") + kpi("Consultas", m.intent, "WA " + m.wa + " · Mail " + m.email) + kpi("Visitas", m.visits, "") + "</div>";
+    html += '<div class="kpi-row">' + kpi("Conv. ficha", pct(m.views, m.clicks || m.views) + "%", "") + kpi("Conv. consulta", pct(m.intent, m.views || 1) + "%", "") + kpi("Conv. visita", pct(m.visits, m.intent || 1) + "%", "") + kpi("Pend. publicar", Object.keys(content.props || {}).length + (content.custom || []).length, "cambios locales") + "</div>";
+    html += '<div class="charts-row"><div class="panel-block chart-card"><h2>Tendencia 14d</h2><div class="chart-wrap"><canvas id="cTrend"></canvas></div></div>';
+    html += '<div class="panel-block chart-card"><h2>Mix</h2><div class="chart-wrap sm"><canvas id="cMix"></canvas></div></div></div>';
+    html += '<p class="section-title">Ranking</p><div class="grid-cards">';
+    ranked.slice(0, 12).forEach(function (r) { html += propCard(r.p, r.m); });
     html += "</div>";
     $("main").innerHTML = html;
-    bindPeriod(); bindOpen();
-    setTimeout(function () {
-      chartLine("cTrend", seriesByDay(ids, 14));
-      chartDonut("cMix", m);
-    }, 30);
+    bindPeriod(); bindCards();
+    setTimeout(function () { chartLine("cTrend", seriesByDay(ids, 14)); chartDonut("cMix", m); }, 30);
   }
 
-  /* DETAIL */
+  /* ——— EDITOR CMS ——— */
+  function renderEdit() {
+    if (user.role !== "admin") {
+      $("main").innerHTML = '<div class="empty">Solo admin</div>'; return;
+    }
+    var isNew = routeParam === "__new__";
+    var p = isNew ? {
+      id: "", name: "", loc: "", beds: "2 Recámaras", bedsKey: "2",
+      price: "", pricePin: "", tag: "", desc: "", images: [],
+      lat: 20.211, lng: -87.465, regionKey: "tulum", status: "published"
+    } : propById(routeParam);
+    if (!p) {
+      $("main").innerHTML = '<div class="empty">No encontrada <button class="btn ghost sm" id="backBtn">Volver</button></div>';
+      $("backBtn").onclick = function () { go("inventory"); };
+      return;
+    }
+    var meta = p.id ? ensureProp(p.id) : { status: "published", ownerId: null, note: "" };
+    var imgs = (p.images || []).slice();
+    var html = '<button type="button" class="btn ghost sm" id="backBtn">← Inventario</button>';
+    html += '<p class="section-title">' + (isNew ? "Nueva propiedad" : "Editar contenido") + "</p>";
+    html += '<div class="panel-block"><h2>Identidad y precio</h2><div class="form-row">';
+    html += '<label style="flex:2">Título<input id="eName" value="' + esc(p.name) + '"/></label>';
+    html += '<label>Zona / loc<input id="eLoc" value="' + esc(p.loc || "") + '"/></label></div>';
+    html += '<div class="form-row">';
+    html += '<label>Dormitorios<input id="eBeds" value="' + esc(p.beds || "") + '" placeholder="2 Recámaras"/></label>';
+    html += '<label>Precio público<input id="ePrice" value="' + esc(p.price || "") + '" placeholder="$25,000 MXN / mes"/></label>';
+    html += '<label>Pin mapa<input id="ePin" value="' + esc(p.pricePin || "") + '" placeholder="$25k"/></label></div>';
+    html += '<div class="form-row">';
+    html += '<label>Tag<input id="eTag" value="' + esc(p.tag || "") + '"/></label>';
+    html += '<label>Lat<input id="eLat" type="number" step="any" value="' + esc(p.lat != null ? p.lat : "") + '"/></label>';
+    html += '<label>Lng<input id="eLng" type="number" step="any" value="' + esc(p.lng != null ? p.lng : "") + '"/></label></div>';
+    html += '<label class="field"><span>Descripción</span><textarea id="eDesc" rows="5" style="background:#0a0a0c;border:1px solid var(--line);border-radius:14px;padding:12px;color:var(--text);font-size:14px;width:100%;resize:vertical">' + esc(p.desc || "") + "</textarea></label></div>";
+
+    html += '<div class="panel-block"><h2>Disponibilidad y dueño</h2><div class="form-row">';
+    html += '<label>Status<select id="eStatus">';
+    ["published", "reserved", "paused", "rented", "draft"].forEach(function (st) {
+      var cur = p.status || meta.status || "published";
+      html += '<option value="' + st + '"' + (cur === st ? " selected" : "") + ">" + st + "</option>";
+    });
+    html += '</select></label><label>Propietario<select id="eOwner"><option value="">— Sin dueño —</option>';
+    state.users.filter(function (u) { return u.role === "owner" && u.active !== false; }).forEach(function (o) {
+      var cur = meta.ownerId || p.ownerId || "";
+      html += '<option value="' + esc(o.id) + '"' + (cur === o.id ? " selected" : "") + ">" + esc(o.name || o.username) + "</option>";
+    });
+    html += '</select></label></div>';
+    html += '<label class="field"><span>Nota interna</span><input id="eNote" value="' + esc(meta.note || p.note || "") + '"/></label>';
+    html += '<p class="note">published/reserved = visibles en el sitio · paused/rented/draft = ocultas al público tras publicar</p></div>';
+
+    html += '<div class="panel-block"><h2>Imágenes (' + imgs.length + ')</h2>';
+    html += '<p class="note">Pegá URLs de Google Drive (lh3.googleusercontent.com/d/ID) u otras HTTPS. Orden = orden del carrusel.</p>';
+    html += '<div id="imgList" class="feed">';
+    imgs.forEach(function (u, i) {
+      html += '<div class="feed-item" data-i="' + i + '" style="display:flex;gap:8px;align-items:center">';
+      html += '<i style="flex:0 0 56px;height:40px;border-radius:8px;background:#222 center/cover;background-image:url(\'' + esc(String(u).replace(/=w\\d+/, "=w120")) + '\')"></i>';
+      html += '<input data-img="' + i + '" value="' + esc(u) + '" style="flex:1;background:#0a0a0c;border:1px solid var(--line);border-radius:10px;padding:8px;color:var(--text);font-size:12px"/>';
+      html += '<button type="button" class="btn ghost sm" data-up="' + i + '">↑</button>';
+      html += '<button type="button" class="btn ghost sm" data-dn="' + i + '">↓</button>';
+      html += '<button type="button" class="btn danger sm" data-rm="' + i + '">×</button></div>';
+    });
+    html += '</div><div class="form-row" style="margin-top:10px">';
+    html += '<label style="flex:1">Nueva URL<input id="eNewImg" placeholder="https://lh3.googleusercontent.com/d/..."/></label></div>';
+    html += '<button type="button" class="btn ghost sm" id="addImg">+ Agregar imagen</button></div>';
+
+    if (isNew) {
+      html += '<div class="panel-block"><h2>ID</h2><label class="field"><span>ID único (auto si vacío)</span><input id="eId" placeholder="aldea-zama-mi-depto"/></label></div>';
+    } else {
+      html += '<p class="meta">ID: <code>' + esc(p.id) + "</code></p>";
+    }
+
+    html += '<div class="toolbar" style="margin-top:14px">';
+    html += '<button type="button" class="btn gold" id="eSave">Guardar cambios</button>';
+    if (!isNew) html += '<button type="button" class="btn danger" id="eDel">Quitar del catálogo</button>';
+    html += '<button type="button" class="btn ghost" id="ePub">Guardar y ir a Publicar</button></div>';
+    html += '<p class="note">Los cambios quedan en este dispositivo. Usá <strong>Publicar</strong> para subirlos al sitio real (GitHub).</p>';
+
+    $("main").innerHTML = html;
+    $("backBtn").onclick = function () { go("inventory"); };
+
+    function readImgs() {
+      var out = [];
+      $("main").querySelectorAll("[data-img]").forEach(function (inp) {
+        var v = inp.value.trim(); if (v) out.push(v);
+      });
+      return out;
+    }
+    function refreshImgs(arr) {
+      // re-render image section only is hard; full re-save path uses current form - for reorder we re-render edit with temp
+      window.__editImgs = arr;
+      // mutate and re-call
+      p.images = arr;
+      renderEdit();
+      // restore form fields from window? simpler: store draft
+    }
+
+    // keep draft of images on window during edit session
+    if (!window.__editImgs || window.__editId !== (p.id || "__new__")) {
+      window.__editImgs = imgs.slice();
+      window.__editId = p.id || "__new__";
+    }
+
+    $("addImg").onclick = function () {
+      var v = $("eNewImg").value.trim();
+      if (!v) return;
+      window.__editImgs.push(v);
+      $("eNewImg").value = "";
+      // update list without losing form: store form values
+      stashAndRerender(p);
+    };
+    $("main").querySelectorAll("[data-rm]").forEach(function (b) {
+      b.onclick = function () {
+        var i = Number(b.getAttribute("data-rm"));
+        window.__editImgs.splice(i, 1);
+        stashAndRerender(p);
+      };
+    });
+    $("main").querySelectorAll("[data-up]").forEach(function (b) {
+      b.onclick = function () {
+        var i = Number(b.getAttribute("data-up"));
+        if (i <= 0) return;
+        var a = window.__editImgs; var t = a[i - 1]; a[i - 1] = a[i]; a[i] = t;
+        stashAndRerender(p);
+      };
+    });
+    $("main").querySelectorAll("[data-dn]").forEach(function (b) {
+      b.onclick = function () {
+        var i = Number(b.getAttribute("data-dn"));
+        var a = window.__editImgs;
+        if (i >= a.length - 1) return;
+        var t = a[i + 1]; a[i + 1] = a[i]; a[i] = t;
+        stashAndRerender(p);
+      };
+    });
+
+    function stashAndRerender(base) {
+      window.__editDraft = collectForm(base);
+      window.__editDraft.images = window.__editImgs.slice();
+      // apply draft onto base for display
+      Object.keys(window.__editDraft).forEach(function (k) { base[k] = window.__editDraft[k]; });
+      renderEdit();
+      if (window.__editDraft) {
+        // restore inputs after render
+        var d = window.__editDraft;
+        if ($("eName")) $("eName").value = d.name || "";
+        if ($("eLoc")) $("eLoc").value = d.loc || "";
+        if ($("eBeds")) $("eBeds").value = d.beds || "";
+        if ($("ePrice")) $("ePrice").value = d.price || "";
+        if ($("ePin")) $("ePin").value = d.pricePin || "";
+        if ($("eTag")) $("eTag").value = d.tag || "";
+        if ($("eLat")) $("eLat").value = d.lat != null ? d.lat : "";
+        if ($("eLng")) $("eLng").value = d.lng != null ? d.lng : "";
+        if ($("eDesc")) $("eDesc").value = d.desc || "";
+        if ($("eStatus")) $("eStatus").value = d.status || "published";
+        if ($("eNote")) $("eNote").value = d.note || "";
+        if ($("eOwner") && d.ownerId) $("eOwner").value = d.ownerId;
+        if ($("eId") && d.id) $("eId").value = d.id;
+      }
+    }
+
+    function collectForm(base) {
+      var price = $("ePrice").value.trim();
+      var pin = $("ePin").value.trim() || pricePinFrom(price);
+      var beds = $("eBeds").value.trim();
+      var name = $("eName").value.trim();
+      var loc = $("eLoc").value.trim();
+      return {
+        id: base.id || ($("eId") && $("eId").value.trim()) || slugify(name + "-" + loc),
+        name: name,
+        loc: loc,
+        beds: beds,
+        bedsKey: bedsKeyFrom(beds),
+        price: price,
+        pricePin: pin,
+        tag: $("eTag").value.trim() || (loc + (beds ? " · " + beds : "")),
+        desc: $("eDesc").value.trim(),
+        lat: $("eLat").value !== "" ? Number($("eLat").value) : base.lat,
+        lng: $("eLng").value !== "" ? Number($("eLng").value) : base.lng,
+        regionKey: base.regionKey || "tulum",
+        status: $("eStatus").value,
+        ownerId: $("eOwner").value || null,
+        note: $("eNote").value.trim(),
+        images: readImgs().length ? readImgs() : (window.__editImgs || base.images || [])
+      };
+    }
+
+    function persist(goPublish) {
+      var data = collectForm(p);
+      if (!data.name) return alert("El título es obligatorio");
+      if (!data.images || !data.images.length) {
+        if (!confirm("Sin imágenes. ¿Guardar igual?")) return;
+      }
+      // sync meta
+      var meta2 = ensureProp(data.id);
+      meta2.status = data.status;
+      meta2.ownerId = data.ownerId;
+      meta2.note = data.note;
+      saveState();
+
+      var isCustom = isNew || (content.custom || []).some(function (c) { return c.id === data.id; });
+      var inBase = baseCatalog.some(function (b) { return b.id === data.id; });
+
+      if (isNew || (isCustom && !inBase)) {
+        content.custom = (content.custom || []).filter(function (c) { return c.id !== data.id; });
+        content.custom.push(data);
+        content.deleted = (content.deleted || []).filter(function (id) { return id !== data.id; });
+      } else {
+        // patch base property
+        var patch = {
+          name: data.name, loc: data.loc, beds: data.beds, bedsKey: data.bedsKey,
+          price: data.price, pricePin: data.pricePin, tag: data.tag, desc: data.desc,
+          lat: data.lat, lng: data.lng, status: data.status, images: data.images,
+          note: data.note, ownerId: data.ownerId
+        };
+        content.props[data.id] = Object.assign({}, content.props[data.id] || {}, patch);
+        content.deleted = (content.deleted || []).filter(function (id) { return id !== data.id; });
+      }
+      saveContent();
+      rebuildCatalog();
+      window.__editImgs = null; window.__editDraft = null; window.__editId = null;
+      alert("Guardado localmente");
+      if (goPublish) go("tools");
+      else go("edit", data.id);
+    }
+
+    $("eSave").onclick = function () { persist(false); };
+    $("ePub").onclick = function () { persist(true); };
+    if ($("eDel")) {
+      $("eDel").onclick = function () {
+        if (!confirm("¿Ocultar/quitar «" + p.name + "» del catálogo público?")) return;
+        content.deleted = content.deleted || [];
+        if (content.deleted.indexOf(p.id) < 0) content.deleted.push(p.id);
+        content.custom = (content.custom || []).filter(function (c) { return c.id !== p.id; });
+        delete content.props[p.id];
+        saveContent();
+        rebuildCatalog();
+        alert("Marcada para quitar. Publicá para aplicar en el sitio.");
+        go("inventory");
+      };
+    }
+  }
+
   function renderDetail() {
     var p = propById(routeParam);
     if (!p) {
-      $("main").innerHTML = '<div class="empty">No encontrada.<br/><button class="btn ghost sm" id="backBtn">Volver</button></div>';
-      $("backBtn").onclick = function () { go(user.role === "admin" ? "inventory" : "myprops"); };
-      return;
+      $("main").innerHTML = '<div class="empty">No encontrada</div>'; return;
     }
-    if (user.role !== "admin" && ensureProp(p.id).ownerId !== user.id) {
-      $("main").innerHTML = '<div class="empty">Sin acceso.</div>'; return;
+    if (user.role !== "admin" && ensureProp(p.id).ownerId !== user.id && p.ownerId !== user.id) {
+      $("main").innerHTML = '<div class="empty">Sin acceso</div>'; return;
     }
     var meta = ensureProp(p.id);
     var m = metricsFor(p.id);
     var m30 = metricsFor(p.id, 30);
     var img = (p.images && p.images[0]) ? String(p.images[0]).replace(/=w\d+/, "=w1200") : "";
-
     var html = '<button type="button" class="btn ghost sm" id="backBtn">← Volver</button>';
+    if (user.role === "admin") html += ' <button type="button" class="btn gold sm" id="toEdit">Editar contenido</button>';
     html += periodTabs();
     html += '<div class="detail-hero" style="background-image:url(\'' + esc(img) + '\')"></div>';
-    if (p.images && p.images.length) {
-      html += '<div class="thumbs">' + p.images.slice(0, 8).map(function (u) {
-        return "<i style=\"background-image:url('" + esc(String(u).replace(/=w\\d+/, "=w200")) + "')\"></i>";
-      }).join("") + "</div>";
-    }
-    html += '<div class="detail-head"><h1>' + esc(p.name) + '</h1><span class="' + statusClass(meta.status) + '">' + esc(meta.status) + "</span></div>";
-    html += '<p class="meta">' + esc(p.loc || "") + " · " + esc(p.beds || "") + " · " + esc(p.price || "") + " · " + ((p.images && p.images.length) || 0) + " fotos</p>";
-    html += '<p class="meta">Owner: <strong>' + esc(ownerName(meta.ownerId)) + "</strong>" + (meta.note ? " · Nota: " + esc(meta.note) : "") + "</p>";
-
-    html += '<div class="kpi-row">';
-    html += kpi("Pulse", m.score, m.label);
-    html += kpi("Fichas", m.views, "30d: " + m30.views);
-    html += kpi("Consultas", m.intent, "WA " + m.wa + " · Mail " + m.email);
-    html += kpi("Visitas", m.visits, "30d: " + m30.visits);
-    html += "</div>";
-    html += '<p class="conv">Conversión · ficha <strong>' + m.convView + "%</strong> · consulta <strong>" + m.convIntent + "%</strong> · visita <strong>" + m.convVisit + "%</strong></p>";
-
+    html += '<div class="detail-head"><h1>' + esc(p.name) + '</h1><span class="' + statusClass(p.status || meta.status) + '">' + esc(p.status || meta.status || "published") + "</span></div>";
+    html += '<p class="meta">' + esc(p.loc || "") + " · " + esc(p.beds || "") + '</p>';
+    html += '<p class="meta" style="color:#e8d5b5;font-size:16px;font-weight:500">' + esc(p.price || "Precio negociable") + "</p>";
+    html += '<div class="kpi-row">' + kpi("Pulse", m.score, m.label) + kpi("Fichas", m.views, "30d " + m30.views) + kpi("Consultas", m.intent, "WA " + m.wa) + kpi("Visitas", m.visits, "30d " + m30.visits) + "</div>";
     html += '<div class="charts-row"><div class="panel-block chart-card"><h2>14 días</h2><div class="chart-wrap"><canvas id="cProp"></canvas></div></div>';
     html += '<div class="panel-block chart-card"><h2>Embudo</h2><div class="funnel">';
     var base = Math.max(m.clicks, m.views, 1);
-    html += funnel("Clicks", m.clicks, base);
-    html += funnel("Ficha", m.views, base);
-    html += funnel("Consulta", m.intent, base);
-    html += funnel("Visita", m.visits, base);
-    html += "</div></div></div>";
-
-    if (user.role === "admin") {
-      html += '<div class="panel-block"><h2>Control operativo</h2><div class="form-row">';
-      html += '<label>Status<select id="dStatus">';
-      ["published", "paused", "reserved", "rented", "draft"].forEach(function (st) {
-        html += '<option value="' + st + '"' + (meta.status === st ? " selected" : "") + ">" + st + "</option>";
-      });
-      html += '</select></label><label>Propietario<select id="dOwner"><option value="">— Sin dueño —</option>';
-      state.users.filter(function (u) { return u.role === "owner" && u.active !== false; }).forEach(function (o) {
-        html += '<option value="' + esc(o.id) + '"' + (meta.ownerId === o.id ? " selected" : "") + ">" + esc(o.name || o.username) + "</option>";
-      });
-      html += '</select></label></div>';
-      html += '<label class="field"><span>Nota interna</span><input id="dNote" type="text" value="' + esc(meta.note || "") + '"/></label>';
-      html += '<div class="pcard-actions" style="margin-top:12px">';
-      html += '<button type="button" class="btn gold sm" id="dSave">Guardar</button>';
-      html += '<button type="button" class="btn ghost sm" id="dVisit">+ Visita</button>';
-      html += '<button type="button" class="btn ghost sm" id="dRent">Rentado</button>';
-      html += '<button type="button" class="btn ghost sm" id="dPause">Pausar</button>';
-      html += '<a class="btn ghost sm" href="../index.html" target="_blank" rel="noopener">Ver en sitio</a></div></div>';
+    function funnel(l, v) {
+      return '<div class="funnel-row"><span>' + esc(l) + '</span><div class="funnel-bar"><i style="width:' + Math.round((v / base) * 100) + '%"></i></div><b>' + v + "</b></div>";
     }
-
-    html += '<div class="panel-block"><h2>Timeline</h2><div class="feed">';
-    var labels = { detail_view: "Ficha", card_click: "Card", map_pin_click: "Mapa", whatsapp_click: "WhatsApp", email_click: "Email", visit_scheduled: "Visita", rented: "Rentado", status_changed: "Status" };
-    var tl = loadEvents().filter(function (e) { return e.propertyId === p.id; }).reverse().slice(0, 40);
-    if (!tl.length) html += '<div class="empty">Sin eventos en esta unidad.</div>';
-    tl.forEach(function (e) {
-      html += '<div class="feed-item"><time>' + esc(fmtDate(e.ts)) + "</time>" + esc(labels[e.type] || e.type) + "</div>";
-    });
-    html += "</div></div>";
-
+    html += funnel("Clicks", m.clicks) + funnel("Ficha", m.views) + funnel("Consulta", m.intent) + funnel("Visita", m.visits);
+    html += "</div></div></div>";
+    if (user.role === "admin") {
+      html += '<div class="pcard-actions"><button class="btn ghost sm" id="dVisit">+ Visita</button><button class="btn ghost sm" id="dRent">Rentado</button></div>';
+    }
     $("main").innerHTML = html;
     $("backBtn").onclick = function () { go(user.role === "admin" ? "inventory" : "myprops"); };
+    if ($("toEdit")) $("toEdit").onclick = function () { go("edit", p.id); };
     bindPeriod();
-    setTimeout(function () { chartLine("cProp", seriesByDay({ [p.id]: true }, 14)); }, 30);
-
-    if (user.role === "admin") {
-      $("dSave").onclick = function () {
-        meta.status = $("dStatus").value;
-        meta.ownerId = $("dOwner").value || null;
-        meta.note = $("dNote").value.trim();
-        saveState();
-        pushEvent({ id: uid("ev"), type: "status_changed", propertyId: p.id, ts: now(), meta: { status: meta.status } });
-        renderDetail();
-      };
-      $("dVisit").onclick = function () {
-        pushEvent({ id: uid("ev"), type: "visit_scheduled", propertyId: p.id, ts: now() });
-        renderDetail();
-      };
-      $("dRent").onclick = function () {
-        meta.status = "rented"; saveState();
-        pushEvent({ id: uid("ev"), type: "rented", propertyId: p.id, ts: now() });
-        renderDetail();
-      };
-      $("dPause").onclick = function () {
-        meta.status = "paused"; saveState();
-        pushEvent({ id: uid("ev"), type: "status_changed", propertyId: p.id, ts: now(), meta: { status: "paused" } });
-        renderDetail();
-      };
-    }
-  }
-  function funnel(label, val, max) {
-    var p = max ? Math.round((val / max) * 100) : 0;
-    return '<div class="funnel-row"><span>' + esc(label) + '</span><div class="funnel-bar"><i style="width:' + p + '%"></i></div><b>' + val + "</b></div>";
+    setTimeout(function () {
+      var o = {}; o[p.id] = true;
+      chartLine("cProp", seriesByDay(o, 14));
+    }, 30);
+    if ($("dVisit")) $("dVisit").onclick = function () {
+      pushEvent({ id: uid("ev"), type: "visit_scheduled", propertyId: p.id, ts: now() }); renderDetail();
+    };
+    if ($("dRent")) $("dRent").onclick = function () {
+      var meta2 = ensureProp(p.id); meta2.status = "rented";
+      content.props[p.id] = Object.assign({}, content.props[p.id] || {}, { status: "rented" });
+      saveState(); saveContent(); rebuildCatalog();
+      pushEvent({ id: uid("ev"), type: "rented", propertyId: p.id, ts: now() });
+      renderDetail();
+    };
   }
 
-  /* INVENTORY */
   function renderInventory() {
     var q = (window.__invQ || "").toLowerCase();
     var stf = window.__invSt || "all";
-    var own = window.__invOwn || "all";
     var list = catalog.filter(function (p) {
-      var meta = ensureProp(p.id);
-      if (stf !== "all" && meta.status !== stf) return false;
-      if (own === "none" && meta.ownerId) return false;
-      if (own === "yes" && !meta.ownerId) return false;
+      var st = p.status || ensureProp(p.id).status || "published";
+      if (stf !== "all" && st !== stf) return false;
       if (!q) return true;
-      return (p.name + " " + p.id + " " + (p.loc || "") + " " + (p.beds || "")).toLowerCase().indexOf(q) >= 0;
+      return (p.name + " " + p.id + " " + (p.loc || "") + " " + (p.price || "")).toLowerCase().indexOf(q) >= 0;
     });
     list.sort(function (a, b) { return metricsFor(b.id).score - metricsFor(a.id).score; });
-
-    var html = '<p class="section-title">Inventario ' + list.length + " / " + catalog.length + "</p>";
-    html += periodTabs();
-    html += '<div class="form-row">';
-    html += '<label style="flex:2">Buscar<input id="invSearch" type="search" value="' + esc(window.__invQ || "") + '"/></label>';
+    var html = '<div class="toolbar"><button type="button" class="btn gold sm" id="btnNew">+ Nueva propiedad</button>';
+    html += '<button type="button" class="btn ghost sm" id="btnPub">Publicar cambios</button></div>';
+    html += '<p class="section-title">Inventario ' + list.length + " / " + catalog.length + "</p>" + periodTabs();
+    html += '<div class="form-row"><label style="flex:2">Buscar<input id="invSearch" type="search" value="' + esc(window.__invQ || "") + '"/></label>';
     html += '<label>Status<select id="invSt"><option value="all">Todos</option>';
-    ["published", "paused", "reserved", "rented", "draft"].forEach(function (st) {
+    ["published", "reserved", "paused", "rented", "draft"].forEach(function (st) {
       html += '<option value="' + st + '"' + (stf === st ? " selected" : "") + ">" + st + "</option>";
     });
-    html += '</select></label><label>Owner<select id="invOwn">';
-    html += '<option value="all"' + (own === "all" ? " selected" : "") + ">Todos</option>";
-    html += '<option value="none"' + (own === "none" ? " selected" : "") + ">Sin dueño</option>";
-    html += '<option value="yes"' + (own === "yes" ? " selected" : "") + ">Con dueño</option></select></label></div>";
-    html += '<div class="grid-cards">';
+    html += "</select></label></div><div class=\"grid-cards\">";
     list.forEach(function (p) { html += propCard(p); });
     html += "</div>";
     $("main").innerHTML = html;
-    bindPeriod();
+    bindPeriod(); bindCards();
+    $("btnNew").onclick = function () {
+      window.__editImgs = []; window.__editId = "__new__"; window.__editDraft = null;
+      go("edit", "__new__");
+    };
+    $("btnPub").onclick = function () { go("tools"); };
     $("invSearch").oninput = function () { window.__invQ = this.value; renderInventory(); };
     $("invSt").onchange = function () { window.__invSt = this.value; renderInventory(); };
-    $("invOwn").onchange = function () { window.__invOwn = this.value; renderInventory(); };
-    bindOpen();
   }
 
   function renderMyProps() {
     var list = visibleCatalog();
     var html = periodTabs() + '<p class="section-title">Mis propiedades (' + list.length + ")</p>";
-    if (!list.length) html += '<div class="empty">Aún no tenés unidades asignadas.</div>';
+    if (!list.length) html += '<div class="empty">Sin unidades asignadas</div>';
     else {
       html += '<div class="grid-cards">';
       list.forEach(function (p) { html += propCard(p); });
       html += "</div>";
     }
-    $("main").innerHTML = html;
-    bindPeriod(); bindOpen();
+    $("main").innerHTML = html; bindPeriod(); bindCards();
   }
 
   function renderOwners() {
     var owners = state.users.filter(function (u) { return u.role === "owner"; });
-    var html = '<div class="panel-block"><h2>Alta de propietario</h2>';
-    html += '<p class="note">Vos creás usuario y contraseña y se los transmitís. Ellos solo consultan métricas.</p>';
-    html += '<div class="form-row">';
+    var html = '<div class="panel-block"><h2>Crear propietario</h2><div class="form-row">';
     html += '<label>Nombre<input id="oName"/></label><label>Usuario<input id="oUser"/></label>';
-    html += '<label>Email<input id="oEmail" type="email"/></label><label>Teléfono<input id="oPhone"/></label>';
-    html += '<label>Contraseña<input id="oPass" type="text" placeholder="mín. 6"/></label></div>';
-    html += '<button type="button" class="btn gold" id="oCreate">Crear y mostrar acceso</button>';
-    html += '<pre id="oCreds" class="note" style="display:none;white-space:pre-wrap;margin-top:12px"></pre></div>';
-    html += '<p class="section-title">Directorio (' + owners.length + ")</p>";
-    html += '<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Usuario</th><th>Contacto</th><th>Props</th><th>Pulse medio</th><th></th></tr></thead><tbody>';
+    html += '<label>Email<input id="oEmail" type="email"/></label><label>Tel<input id="oPhone"/></label>';
+    html += '<label>Pass<input id="oPass" type="text"/></label></div>';
+    html += '<button class="btn gold" id="oCreate">Crear</button><pre id="oCreds" class="note" style="display:none;white-space:pre-wrap"></pre></div>';
+    html += '<p class="section-title">Directorio (' + owners.length + ')</p><div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Usuario</th><th>Props</th><th></th></tr></thead><tbody>';
     owners.forEach(function (o) {
-      var props = catalog.filter(function (p) { return ensureProp(p.id).ownerId === o.id; });
-      var avg = props.length ? Math.round(props.reduce(function (s, p) { return s + metricsFor(p.id).score; }, 0) / props.length) : 0;
-      html += "<tr><td>" + esc(o.name) + "</td><td>" + esc(o.username) + "</td><td>" + esc(o.email || "") + "<div class='meta'>" + esc(o.phone || "") + "</div></td>";
-      html += "<td>" + props.length + "</td><td>" + avg + "</td>";
-      html += '<td><button class="btn danger sm" data-off="' + esc(o.id) + '">Off</button></td></tr>';
+      var n = catalog.filter(function (p) { return (ensureProp(p.id).ownerId || p.ownerId) === o.id; }).length;
+      html += "<tr><td>" + esc(o.name) + "</td><td>" + esc(o.username) + "</td><td>" + n + '</td><td><button class="btn danger sm" data-off="' + esc(o.id) + '">Off</button></td></tr>';
     });
     html += "</tbody></table></div>";
     $("main").innerHTML = html;
     $("oCreate").onclick = function () {
       var username = $("oUser").value.trim().toLowerCase();
       var pass = $("oPass").value;
-      if (!username || pass.length < 6) return alert("Usuario y contraseña (mín. 6)");
-      if (state.users.some(function (u) { return u.username === username; })) return alert("Usuario existente");
+      if (!username || pass.length < 6) return alert("Usuario + pass mín 6");
+      if (state.users.some(function (u) { return u.username === username; })) return alert("Existe");
       state.users.push({
         id: uid("own"), username: username, email: $("oEmail").value.trim(), phone: $("oPhone").value.trim(),
-        name: $("oName").value.trim() || username, role: "owner", pass: hash(pass), active: true, notify: true
+        name: $("oName").value.trim() || username, role: "owner", pass: hash(pass), active: true
       });
       saveState();
       var box = $("oCreds"); box.style.display = "block";
-      box.textContent = "Entregar al propietario:\n\nUsuario: " + username + "\nContraseña: " + pass +
-        "\nURL: " + location.origin + location.pathname + "\n\nSolo lectura de sus propiedades.";
+      box.textContent = "Usuario: " + username + "\nContraseña: " + pass + "\n" + location.origin + location.pathname;
       renderOwners();
     };
     $("main").querySelectorAll("[data-off]").forEach(function (b) {
@@ -545,90 +766,142 @@
   function renderActivity() {
     var ids = user.role === "admin" ? null : idSet(visibleCatalog());
     var labels = { detail_view: "Ficha", card_click: "Card", map_pin_click: "Mapa", whatsapp_click: "WhatsApp", email_click: "Email", visit_scheduled: "Visita", rented: "Rentado", status_changed: "Status" };
-    var events = loadEvents().filter(function (e) { return !ids || ids[e.propertyId]; }).reverse().slice(0, 100);
+    var events = loadEvents().filter(function (e) { return !ids || ids[e.propertyId]; }).reverse().slice(0, 80);
     var html = '<p class="section-title">Actividad</p><div class="feed">';
-    if (!events.length) html += '<div class="empty">Sin eventos. Usá el sitio público en este navegador o registrá visitas.</div>';
+    if (!events.length) html += '<div class="empty">Sin eventos aún</div>';
     events.forEach(function (e) {
       var p = propById(e.propertyId);
       html += '<div class="feed-item"><time>' + esc(fmtDate(e.ts)) + "</time><strong>" + esc(labels[e.type] || e.type) + "</strong> · " + esc(p ? p.name : e.propertyId || "—");
-      if (p) html += ' <button type="button" class="btn ghost sm" data-open="' + esc(p.id) + '">Ver</button>';
+      if (p) html += ' <button class="btn ghost sm" data-open="' + esc(p.id) + '">Ver</button>';
       html += "</div>";
     });
     html += "</div>";
-    $("main").innerHTML = html; bindOpen();
+    $("main").innerHTML = html; bindCards();
+  }
+
+  async function publishToGitHub() {
+    var token = sessionStorage.getItem(GH_TOKEN_KEY) || $("ghToken") && $("ghToken").value.trim();
+    if (!token) return alert("Pegá un GitHub token con permiso repo (contents:write)");
+    sessionStorage.setItem(GH_TOKEN_KEY, token);
+    var payload = {
+      version: content.version || 1,
+      updatedAt: new Date().toISOString(),
+      deleted: content.deleted || [],
+      props: content.props || {},
+      custom: content.custom || []
+    };
+    var path = "content-overrides.json";
+    var api = "https://api.github.com/repos/Alejoluca/real-nort-immersive/contents/" + path;
+    var sha = null;
+    try {
+      var cur = await fetch(api + "?ref=main", {
+        headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json" }
+      });
+      if (cur.ok) {
+        var j = await cur.json();
+        sha = j.sha;
+      }
+    } catch (e) {}
+    var body = {
+      message: "content: publish overrides from NORT OS " + payload.updatedAt,
+      content: btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2)))),
+      branch: "main"
+    };
+    if (sha) body.sha = sha;
+    var res = await fetch(api, {
+      method: "PUT",
+      headers: {
+        Authorization: "Bearer " + token,
+        Accept: "application/vnd.github+json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      var err = await res.text();
+      alert("Error GitHub " + res.status + "\n" + err.slice(0, 300));
+      return;
+    }
+    alert("Publicado. En 1–2 min el sitio mostrará precios, textos e imágenes actualizados.");
   }
 
   function renderTools() {
-    var html = '<div class="panel-block"><h2>Exportar</h2><p class="note">CSV con métricas del periodo actual (' + periodDays + "d) y respaldo JSON.</p>";
-    html += '<div class="toolbar"><button class="btn gold sm" id="dlCsv">CSV métricas</button>';
-    html += '<button class="btn ghost sm" id="dlJson">JSON respaldo</button>';
-    html += '<button class="btn ghost sm" id="impJson">Importar JSON</button>';
-    html += '<input id="impFile" type="file" accept="application/json" hidden/></div></div>';
+    if (user.role !== "admin") {
+      $("main").innerHTML = '<div class="empty">Solo admin</div>'; return;
+    }
+    var nPatch = Object.keys(content.props || {}).length;
+    var nCustom = (content.custom || []).length;
+    var nDel = (content.deleted || []).length;
+    var html = '<div class="panel-block"><h2>Publicar al sitio</h2>';
+    html += '<p class="note">Sube <code>content-overrides.json</code> al repo para que <strong>todos</strong> vean precios, títulos, descripciones, disponibilidad e imágenes nuevas.</p>';
+    html += '<div class="alert-strip">';
+    html += '<span class="alert-chip">' + nPatch + " editadas</span>";
+    html += '<span class="alert-chip ok">' + nCustom + " nuevas</span>";
+    html += '<span class="alert-chip warn">' + nDel + " quitadas</span></div>";
+    html += '<label class="field"><span>GitHub token (solo en esta sesión)</span>';
+    html += '<input id="ghToken" type="password" placeholder="ghp_..." value="' + esc(sessionStorage.getItem(GH_TOKEN_KEY) || "") + '"/></label>';
+    html += '<div class="toolbar" style="margin-top:12px">';
+    html += '<button class="btn gold" id="btnPublish">Publicar ahora</button>';
+    html += '<button class="btn ghost sm" id="btnDl">Descargar JSON</button>';
+    html += '<button class="btn ghost sm" id="btnPrev">Preview local ' + (content.livePreview !== false ? "ON" : "OFF") + "</button></div>";
+    html += '<p class="note">Token: Settings → Developer settings → Personal access tokens (contents: write en el repo).</p></div>';
 
-    html += '<div class="panel-block"><h2>Simular demanda (prueba)</h2><p class="note">Genera eventos de ejemplo en este dispositivo para validar gráficos.</p>';
-    html += '<button class="btn ghost sm" id="seedEv">Cargar demo 7 días</button>';
-    html += '<button class="btn danger sm" id="clrEv">Vaciar eventos</button></div>';
+    html += '<div class="panel-block"><h2>Export / backup</h2><div class="toolbar">';
+    html += '<button class="btn ghost sm" id="dlCsv">CSV métricas</button>';
+    html += '<button class="btn ghost sm" id="dlFull">Backup completo</button>';
+    html += '<button class="btn ghost sm" id="seedEv">Demo eventos</button>';
+    html += '<button class="btn danger sm" id="clrEv">Vaciar eventos</button></div></div>';
 
-    html += '<div class="panel-block"><h2>Seguridad local</h2><div class="form-row">';
-    html += '<label>Nueva pass admin<input id="newPass" type="text" placeholder="mín. 6"/></label></div>';
-    html += '<button class="btn gold sm" id="savePass">Cambiar contraseña admin</button></div>';
+    html += '<div class="panel-block"><h2>Pass admin</h2><div class="form-row"><label>Nueva<input id="newPass" type="text"/></label></div>';
+    html += '<button class="btn gold sm" id="savePass">Cambiar</button></div>';
 
-    html += '<p class="note">GitHub Pages · datos en este navegador · contacto real por WhatsApp/email del sitio.</p>';
     $("main").innerHTML = html;
-
+    $("btnPublish").onclick = function () { publishToGitHub(); };
+    $("btnDl").onclick = function () {
+      var payload = { version: 1, updatedAt: new Date().toISOString(), deleted: content.deleted, props: content.props, custom: content.custom };
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
+      a.download = "content-overrides.json"; a.click();
+    };
+    $("btnPrev").onclick = function () {
+      content.livePreview = content.livePreview === false;
+      saveContent();
+      alert("Preview local " + (content.livePreview !== false ? "activado" : "desactivado"));
+      renderTools();
+    };
     $("dlCsv").onclick = function () {
-      var lines = ["id,name,loc,beds,status,owner,views,clicks,wa,email,visits,pulse"];
+      var lines = ["id,name,price,status,views,intent,visits,pulse"];
       catalog.forEach(function (p) {
-        var meta = ensureProp(p.id); var m = metricsFor(p.id);
-        lines.push([p.id, JSON.stringify(p.name || ""), JSON.stringify(p.loc || ""), JSON.stringify(p.beds || ""),
-          meta.status, JSON.stringify(ownerName(meta.ownerId)), m.views, m.clicks, m.wa, m.email, m.visits, m.score].join(","));
+        var m = metricsFor(p.id);
+        lines.push([p.id, JSON.stringify(p.name), JSON.stringify(p.price || ""), p.status || ensureProp(p.id).status, m.views, m.intent, m.visits, m.score].join(","));
       });
       var a = document.createElement("a");
       a.href = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/csv" }));
-      a.download = "nort-os-" + periodDays + "d.csv"; a.click();
+      a.download = "nort-metrics.csv"; a.click();
     };
-    $("dlJson").onclick = function () {
-      var payload = { exportedAt: new Date().toISOString(), state: state, events: loadEvents() };
+    $("dlFull").onclick = function () {
+      var payload = { state: state, content: content, events: loadEvents(), at: new Date().toISOString() };
       var a = document.createElement("a");
       a.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
       a.download = "nort-os-backup.json"; a.click();
     };
-    $("impJson").onclick = function () { $("impFile").click(); };
-    $("impFile").onchange = function () {
-      var f = this.files && this.files[0]; if (!f) return;
-      var reader = new FileReader();
-      reader.onload = function () {
-        try {
-          var data = JSON.parse(reader.result);
-          if (data.state) { state = data.state; saveState(); }
-          if (data.events) saveEvents(data.events);
-          alert("Importado"); location.reload();
-        } catch (e) { alert("JSON inválido"); }
-      };
-      reader.readAsText(f);
-    };
     $("seedEv").onclick = function () {
-      var types = ["card_click", "detail_view", "detail_view", "whatsapp_click", "map_pin_click", "email_click"];
+      var types = ["card_click", "detail_view", "whatsapp_click", "map_pin_click"];
       for (var d = 0; d < 7; d++) {
-        for (var k = 0; k < 8; k++) {
+        for (var k = 0; k < 6; k++) {
           var p = catalog[Math.floor(Math.random() * catalog.length)];
           if (!p) continue;
-          pushEvent({
-            id: uid("ev"), type: types[Math.floor(Math.random() * types.length)],
-            propertyId: p.id, ts: daysAgo(d) + Math.floor(Math.random() * 864e5), source: "demo"
-          });
+          pushEvent({ id: uid("ev"), type: types[k % types.length], propertyId: p.id, ts: daysAgo(d) + Math.random() * 864e5, source: "demo" });
         }
       }
-      alert("Demo cargada"); go("home");
+      alert("Demo OK"); go("home");
     };
-    $("clrEv").onclick = function () {
-      if (confirm("¿Borrar todos los eventos locales?")) { saveEvents([]); alert("Listo"); }
-    };
+    $("clrEv").onclick = function () { if (confirm("¿Vaciar?")) { saveEvents([]); alert("OK"); } };
     $("savePass").onclick = function () {
       var pass = $("newPass").value;
-      if (pass.length < 6) return alert("Mínimo 6 caracteres");
+      if (pass.length < 6) return alert("Mín 6");
       var admin = state.users.find(function (u) { return u.role === "admin"; });
-      if (admin) { admin.pass = hash(pass); saveState(); alert("Contraseña admin actualizada"); }
+      if (admin) { admin.pass = hash(pass); saveState(); alert("Actualizada"); }
     };
   }
 
@@ -636,6 +909,7 @@
     user = currentUser();
     if (!user) return showLogin();
     destroyCharts();
+    if (route === "edit") return renderEdit();
     if (route === "detail") return renderDetail();
     if (user.role === "admin") {
       if (route === "inventory") return renderInventory();
@@ -668,7 +942,7 @@
 
   (async function boot() {
     await loadCatalog();
-    console.log("[NORT OS] props", catalog.length);
+    console.log("[NORT OS] base", baseCatalog.length, "resolved", catalog.length);
     $("boot").hidden = true;
     if (currentUser()) showApp(); else showLogin();
   })();
