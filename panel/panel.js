@@ -397,8 +397,9 @@
     var isNew = routeParam === "__new__";
     var p = isNew ? {
       id: "", name: "", loc: "", beds: "2 Recámaras", bedsKey: "2",
-      price: "", pricePin: "", tag: "", desc: "", images: [],
-      lat: 20.211, lng: -87.465, regionKey: "tulum", status: "published"
+      price: "", pricePin: "", priceNight: "", tag: "", desc: "", images: [],
+      lat: 20.211, lng: -87.465, regionKey: "tulum", status: "published",
+      rentalType: "long", minNights: 2, blockedRanges: []
     } : propById(routeParam);
     if (!p) {
       $("main").innerHTML = '<div class="empty">No encontrada <button class="btn ghost sm" id="backBtn">Volver</button></div>';
@@ -421,6 +422,24 @@
     html += '<label>Lat<input id="eLat" type="number" step="any" value="' + esc(p.lat != null ? p.lat : "") + '"/></label>';
     html += '<label>Lng<input id="eLng" type="number" step="any" value="' + esc(p.lng != null ? p.lng : "") + '"/></label></div>';
     html += '<label class="field"><span>Descripción</span><textarea id="eDesc" rows="5" style="background:#0a0a0c;border:1px solid var(--line);border-radius:14px;padding:12px;color:var(--text);font-size:14px;width:100%;resize:vertical">' + esc(p.desc || "") + "</textarea></label></div>";
+
+    html += '<div class="panel-block"><h2>Modalidad de renta</h2><div class="form-row">';
+    html += '<label>Tipo<select id="eRental">';
+    [["long","Solo largo plazo"],["vacation","Solo vacacional"],["both","Ambas"]].forEach(function(opt){
+      html += '<option value="'+opt[0]+'"'+((p.rentalType||"long")===opt[0]?" selected":"")+'>'+opt[1]+'</option>';
+    });
+    html += '</select></label>';
+    html += '<label>Precio / noche<input id="ePriceNight" value="'+esc(p.priceNight||"")+'" placeholder="$3,500 MXN / noche"/></label>';
+    html += '<label>Mín. noches<input id="eMinNights" type="number" min="1" value="'+(p.minNights||2)+'"/></label>';
+    html += '</div><p class="note">Largo plazo: precio mensual arriba. Vacacional: calendario público + mensaje con fechas. Sin reserva online.</p></div>';
+
+    html += '<div class="panel-block" id="eCalBlock"><h2>Calendario ocupado (vacacional)</h2>';
+    html += '<p class="note">Tocá un día para marcar/desmarcar ocupado. O usá rango abajo.</p>';
+    html += '<div id="eCal"></div>';
+    html += '<div class="form-row"><label>Desde<input id="eBlkFrom" type="date"/></label><label>Hasta<input id="eBlkTo" type="date"/></label></div>';
+    html += '<button type="button" class="btn ghost sm" id="eBlkAdd">Marcar rango ocupado</button>';
+    html += '<button type="button" class="btn danger sm" id="eBlkClr">Limpiar calendario</button>';
+    html += '<div id="eBlkList" class="feed" style="margin-top:10px"></div></div>';
 
     html += '<div class="panel-block"><h2>Disponibilidad y dueño</h2><div class="form-row">';
     html += '<label>Status<select id="eStatus">';
@@ -466,6 +485,93 @@
 
     $("main").innerHTML = html;
     $("backBtn").onclick = function () { go("inventory"); };
+
+    // blocked ranges state
+    window.__editBlocked = (p.blockedRanges || []).map(function (r) {
+      return { start: r.start || r.from, end: r.end || r.to || r.start || r.from };
+    });
+    var calState = { y: new Date().getFullYear(), m: new Date().getMonth() };
+
+    function paintAdminCal() {
+      var host = $("eCal");
+      var list = $("eBlkList");
+      if (!host) return;
+      // inline mini month without RNAvail dependency
+      function pad(n){return n<10?"0"+n:""+n}
+      function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+      function parse(s){var p=String(s).split("-");return new Date(+p[0],+p[1]-1,+p[2])}
+      function blockedSet(){
+        var set={};
+        (window.__editBlocked||[]).forEach(function(r){
+          var a=parse(r.start),b=parse(r.end||r.start);
+          if(b<a){var t=a;a=b;b=t}
+          for(var d=new Date(a);d<=b;d.setDate(d.getDate()+1)) set[iso(d)]=true;
+        });
+        return set;
+      }
+      var set=blockedSet();
+      var months=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+      var first=new Date(calState.y,calState.m,1);
+      var startPad=(first.getDay()+6)%7;
+      var days=new Date(calState.y,calState.m+1,0).getDate();
+      var html='<div class="rn-cal"><div class="rn-cal-head">';
+      html+='<button type="button" class="rn-cal-nav" id="calPrev">‹</button>';
+      html+='<span class="rn-cal-title">'+months[calState.m]+" "+calState.y+"</span>";
+      html+='<button type="button" class="rn-cal-nav" id="calNext">›</button></div>';
+      html+='<div class="rn-cal-dow"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div><div class="rn-cal-grid">';
+      for(var i=0;i<startPad;i++) html+='<button type="button" class="rn-cal-day empty" disabled></button>';
+      for(var d=1;d<=days;d++){
+        var id=iso(new Date(calState.y,calState.m,d));
+        var occ=!!set[id];
+        html+='<button type="button" class="rn-cal-day '+(occ?"blocked":"free")+'" data-d="'+id+'">'+d+"</button>";
+      }
+      html+="</div></div>";
+      host.innerHTML=html;
+      $("calPrev").onclick=function(){calState.m--;if(calState.m<0){calState.m=11;calState.y--}paintAdminCal()};
+      $("calNext").onclick=function(){calState.m++;if(calState.m>11){calState.m=0;calState.y++}paintAdminCal()};
+      host.querySelectorAll("[data-d]").forEach(function(btn){
+        btn.onclick=function(){
+          var day=btn.getAttribute("data-d");
+          // toggle single-day range
+          var found=-1;
+          (window.__editBlocked||[]).forEach(function(r,idx){
+            if(r.start===day && r.end===day) found=idx;
+          });
+          if(found>=0) window.__editBlocked.splice(found,1);
+          else {
+            // if day inside a range, skip simple toggle — add single day block
+            window.__editBlocked.push({start:day,end:day});
+          }
+          paintAdminCal();
+        };
+      });
+      if(list){
+        list.innerHTML=(window.__editBlocked||[]).map(function(r,idx){
+          return '<div class="feed-item">'+esc(r.start)+(r.end&&r.end!==r.start?" → "+esc(r.end):"")+' <button type="button" class="btn danger sm" data-br="'+idx+'">Quitar</button></div>';
+        }).join("") || '<div class="empty">Sin fechas ocupadas</div>';
+        list.querySelectorAll("[data-br]").forEach(function(b){
+          b.onclick=function(){
+            window.__editBlocked.splice(Number(b.getAttribute("data-br")),1);
+            paintAdminCal();
+          };
+        });
+      }
+      // show/hide cal based on rental type
+      var block=$("eCalBlock");
+      var rt=$("eRental")&&$("eRental").value;
+      if(block) block.style.display=(rt==="vacation"||rt==="both")?"":"none";
+    }
+    paintAdminCal();
+    if($("eRental")) $("eRental").onchange=function(){paintAdminCal()};
+    if($("eBlkAdd")) $("eBlkAdd").onclick=function(){
+      var a=$("eBlkFrom").value,b=$("eBlkTo").value||a;
+      if(!a) return alert("Elegí fecha desde");
+      window.__editBlocked.push({start:a,end:b});
+      paintAdminCal();
+    };
+    if($("eBlkClr")) $("eBlkClr").onclick=function(){
+      if(confirm("¿Limpiar todas las fechas ocupadas?")){window.__editBlocked=[];paintAdminCal()}
+    };
 
     function readImgs() {
       var out = [];
@@ -561,6 +667,10 @@
         bedsKey: bedsKeyFrom(beds),
         price: price,
         pricePin: pin,
+        priceNight: ($("ePriceNight") && $("ePriceNight").value.trim()) || "",
+        rentalType: ($("eRental") && $("eRental").value) || "long",
+        minNights: ($("eMinNights") && Number($("eMinNights").value)) || 2,
+        blockedRanges: window.__editBlocked || base.blockedRanges || [],
         tag: $("eTag").value.trim() || (loc + (beds ? " · " + beds : "")),
         desc: $("eDesc").value.trim(),
         lat: $("eLat").value !== "" ? Number($("eLat").value) : base.lat,
@@ -597,7 +707,9 @@
         // patch base property
         var patch = {
           name: data.name, loc: data.loc, beds: data.beds, bedsKey: data.bedsKey,
-          price: data.price, pricePin: data.pricePin, tag: data.tag, desc: data.desc,
+          price: data.price, pricePin: data.pricePin, priceNight: data.priceNight,
+          rentalType: data.rentalType, minNights: data.minNights, blockedRanges: data.blockedRanges,
+          tag: data.tag, desc: data.desc,
           lat: data.lat, lng: data.lng, status: data.status, images: data.images,
           note: data.note, ownerId: data.ownerId
         };
