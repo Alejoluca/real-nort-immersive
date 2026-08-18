@@ -3,11 +3,18 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "start": "node server/src/index.js",
+    "seed": "node server/src/seed.js",
     "sync": "node scripts/sync-drive.mjs",
     "build": "node scripts/build-data.mjs",
     "publish": "node scripts/publish.mjs",
     "deploy": "node scripts/build-data.mjs && node scripts/publish.mjs",
     "sync:full": "node scripts/sync-drive.mjs && node scripts/build-data.mjs && node scripts/publish.mjs",
     "inventory": "node scripts/sync-drive.mjs"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
   }
 }
