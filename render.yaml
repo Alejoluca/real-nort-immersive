@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: real-nort-immersive
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server/src/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CORS_ORIGIN
+        value: https://alejoluca.github.io
+      - key: NORT_ADMIN_USER
+        value: admin
+      - key: NORT_ADMIN_EMAIL
+        value: alejolucatelli@gmail.com
+      - key: NORT_ADMIN_PASS
+        value: RealNort2026!
