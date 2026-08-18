@@ -360,6 +360,8 @@
     var scope = visibleCatalog();
     var ids = user.role === "admin" ? null : idSet(scope);
     var m = scopeMetrics(ids);
+    var sync = window.__nortSync || {};
+
     var unassigned = catalog.filter(function (p) { return !(ensureProp(p.id).ownerId || p.ownerId); }).length;
     var paused = scope.filter(function (p) { return (p.status || ensureProp(p.id).status) === "paused"; }).length;
     var rented = scope.filter(function (p) { return (p.status || ensureProp(p.id).status) === "rented"; }).length;
@@ -372,6 +374,13 @@
 
     var html = periodTabs();
     html += '<div class="alert-strip">';
+    if (user.role === "admin") {
+      var synced = sync.status === "synced";
+      html += '<span class="sync-pill' + (synced ? "" : " warn") + '"><i></i>' +
+        (synced ? ("Sincronizado" + (content.updatedAt ? " · " + String(content.updatedAt).slice(0, 16).replace("T", " ") : "")) : "Solo local · publicá para el equipo") +
+        "</span>";
+    }
+
     html += '<span class="alert-chip ok">' + scope.length + " props</span>";
     if (user.role === "admin" && unassigned) html += '<span class="alert-chip warn">' + unassigned + " sin dueño</span>";
     if (paused) html += '<span class="alert-chip warn">' + paused + " pausadas</span>";
@@ -719,7 +728,22 @@
       saveContent();
       rebuildCatalog();
       window.__editImgs = null; window.__editDraft = null; window.__editId = null;
-      alert("Guardado localmente");
+      var token = sessionStorage.getItem(GH_TOKEN_KEY);
+      if (token) {
+        window.__nortQuietPub = true;
+        publishToGitHub().then(function () {
+          window.__nortSync.status = "synced";
+          window.__nortSync.lastPub = new Date().toISOString();
+          if (goPublish) go("tools");
+          else go("edit", data.id);
+        }).catch(function () {
+          alert("Guardado local. Publicación falló — revisá token en Publicar.");
+          if (goPublish) go("tools");
+          else go("edit", data.id);
+        });
+        return;
+      }
+      alert("Guardado en este dispositivo. Andá a Publicar para que el equipo y el sitio lo vean.");
       if (goPublish) go("tools");
       else go("edit", data.id);
     }
@@ -934,7 +958,11 @@
       alert("Error GitHub " + res.status + "\n" + err.slice(0, 300));
       return;
     }
-    alert("Publicado. En 1–2 min el sitio mostrará precios, textos e imágenes actualizados.");
+    window.__nortSync = window.__nortSync || {};
+    window.__nortSync.status = "synced";
+    window.__nortSync.lastPub = payload.updatedAt;
+    if (!window.__nortQuietPub) alert("Publicado. En ~1 min el sitio y el equipo verán los cambios.");
+    window.__nortQuietPub = false;
   }
 
   function renderTools() {
@@ -954,6 +982,7 @@
     html += '<input id="ghToken" type="password" placeholder="ghp_..." value="' + esc(sessionStorage.getItem(GH_TOKEN_KEY) || "") + '"/></label>';
     html += '<div class="toolbar" style="margin-top:12px">';
     html += '<button class="btn gold" id="btnPublish">Publicar ahora</button>';
+    html += '<button class="btn ghost sm" id="btnPull">Traer del sitio</button>';
     html += '<button class="btn ghost sm" id="btnDl">Descargar JSON</button>';
     html += '<button class="btn ghost sm" id="btnPrev">Preview local ' + (content.livePreview !== false ? "ON" : "OFF") + "</button></div>";
     html += '<p class="note">Token: Settings → Developer settings → Personal access tokens (contents: write en el repo).</p></div>';
@@ -969,6 +998,13 @@
 
     $("main").innerHTML = html;
     $("btnPublish").onclick = function () { publishToGitHub(); };
+    if ($("btnPull")) $("btnPull").onclick = async function () {
+      var r = await pullRemoteContent();
+      window.__nortSync.lastPull = r;
+      window.__nortSync.status = r.ok ? "synced" : "local";
+      alert(r.ok ? "Contenido del sitio cargado (" + (r.n||0) + " edits)" : "No se pudo traer: " + (r.reason||""));
+      rebuildCatalog(); render();
+    };
     $("btnDl").onclick = function () {
       var payload = { version: 1, updatedAt: new Date().toISOString(), deleted: content.deleted, props: content.props, custom: content.custom };
       var a = document.createElement("a");
@@ -1052,9 +1088,35 @@
   $("loginPass").addEventListener("keydown", function (e) { if (e.key === "Enter") tryLogin(); });
   $("logoutBtn").onclick = function () { setSession(null); user = null; showLogin(); };
 
+  async function pullRemoteContent() {
+    try {
+      var res = await fetch("../content-overrides.json?t=" + Date.now(), { cache: "no-store" });
+      if (!res.ok) return { ok: false, reason: "http " + res.status };
+      var remote = await res.json();
+      if (!remote || typeof remote !== "object") return { ok: false };
+      // Remote published content is source of truth for the whole team
+      content.props = remote.props || {};
+      content.custom = remote.custom || [];
+      content.deleted = remote.deleted || [];
+      content.updatedAt = remote.updatedAt || content.updatedAt;
+      content.version = remote.version || content.version || 1;
+      content.livePreview = true;
+      saveContent();
+      rebuildCatalog();
+      return { ok: true, at: content.updatedAt, n: Object.keys(content.props || {}).length };
+    } catch (e) {
+      return { ok: false, reason: String(e && e.message || e) };
+    }
+  }
+
+  window.__nortSync = { lastPull: null, lastPub: null, status: "idle" };
+
   (async function boot() {
     await loadCatalog();
-    console.log("[NORT OS] base", baseCatalog.length, "resolved", catalog.length);
+    var pull = await pullRemoteContent();
+    window.__nortSync.lastPull = pull;
+    window.__nortSync.status = pull.ok ? "synced" : "local";
+    console.log("[NORT OS] base", baseCatalog.length, "resolved", catalog.length, "sync", pull);
     $("boot").hidden = true;
     if (currentUser()) showApp(); else showLogin();
   })();
