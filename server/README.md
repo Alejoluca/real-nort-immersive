@@ -1,31 +1,57 @@
-# NORT OS Server
+# NORT OS — API pública
 
-Base de datos en `data/nort-os.json` (atómica). Migrable a Postgres después.
+## Deploy en Render (recomendado, gratis)
 
-## Modelo de roles
+1. Creá cuenta en https://render.com
+2. **New → Web Service**
+3. Conectá el repo `Alejoluca/real-nort-immersive`
+4. Configuración:
+   - **Root Directory:** `server`
+   - **Runtime:** Node
+   - **Build Command:** `npm install`
+   - **Start Command:** `node src/index.js`
+5. Variables de entorno:
 
-| Rol | Crear owners | Asignar props | Editar anuncio | Ver métricas | Recibe mail |
-|-----|--------------|---------------|----------------|--------------|-------------|
-| **admin** | Sí | Sí | Status sí | Todas | Opcional |
-| **owner** | No | No | **No** | Solo las suyas | Sí (email que vos cargás) |
-| **público** | No | No | No | No | No |
+| Key | Value |
+|-----|--------|
+| `NODE_ENV` | `production` |
+| `CORS_ORIGIN` | `https://alejoluca.github.io` |
+| `NORT_ADMIN_USER` | `admin` |
+| `NORT_ADMIN_PASS` | *(elegí una segura)* |
+| `NORT_ADMIN_EMAIL` | `alejolucatelli@gmail.com` |
 
-El propietario **nunca** crea su cuenta. Vos la creás en el panel y le pasás usuario + contraseña.
+6. Create Web Service → esperá la URL, ej:  
+   `https://nort-os-api.onrender.com`
 
-## Arranque
+7. Probar: `https://TU-URL.onrender.com/api/health` → `{"ok":true,...}`
 
-```bash
-cd server
-npm install
-npm run seed
-npm start
+8. Panel con API:
+
+```
+https://alejoluca.github.io/real-nort-immersive/panel/?api=https://TU-URL.onrender.com
 ```
 
-Panel: `.../panel/?api=http://localhost:8787`
+O una sola vez en la consola del panel:
 
-## Variables
+```js
+localStorage.setItem('nort_api', 'https://TU-URL.onrender.com')
+location.reload()
+```
 
-- `NORT_ADMIN_USER` / `NORT_ADMIN_PASS` / `NORT_ADMIN_EMAIL` (seed)
-- `PORT` (default 8787)
-- `CORS_ORIGIN` (ej. https://alejoluca.github.io)
-- `NORT_DB_PATH` (opcional)
+## Login admin
+
+Usuario y pass = los de `NORT_ADMIN_*` en Render.
+
+## Nota free tier Render
+
+El servicio se duerme tras ~15 min sin tráfico. El primer request puede tardar 30–60 s.
+
+## Railway (alternativa)
+
+```bash
+# en carpeta server
+railway init
+railway up
+railway variables set CORS_ORIGIN=https://alejoluca.github.io
+railway variables set NORT_ADMIN_PASS=tu-pass
+```
