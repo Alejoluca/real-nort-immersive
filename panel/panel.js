@@ -2,7 +2,7 @@
 (function () {
   "use strict";
 
-  var DEFAULT_API = "https://real-nort-immersive.onrender.com";
+  var DEFAULT_API = "";
   var API = (window.NORT_API || localStorage.getItem("nort_api") || DEFAULT_API || "").replace(/\/$/, "");
   var STATE_KEY = "nort_os_v1";
   var EVENTS_KEY = "nort_os_events_v1";
@@ -214,7 +214,7 @@
       html += '<div class="pulse-label">' + esc(row.pulse.label) + " · " + row.pulse.intent + " intenciones</div></div></div></article>";
     });
     html += "</div>";
-    html += '<p class="note">Modo local activo · datos en este dispositivo. Servidor API opcional más adelante.</p>';
+    html += '<p class="note">Modo local · sin Render ni pagos. Datos en este dispositivo. Creá owners y asigná props con normalidad.</p>';
     $("main").innerHTML = html;
   }
 
