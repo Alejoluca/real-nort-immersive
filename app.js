@@ -1,4 +1,48 @@
 (function(){
+
+/* ——— NORT OS metrics + status (local phase) ——— */
+window.NORT_OS = window.NORT_OS || {
+  track: function (type, propertyId, meta) {
+    try {
+      var key = "nort_os_events_v1";
+      var list = JSON.parse(localStorage.getItem(key) || "[]");
+      list.push({
+        id: "ev_" + Math.random().toString(36).slice(2, 9),
+        type: type,
+        propertyId: propertyId || null,
+        ts: Date.now(),
+        meta: meta || {},
+        source: "public"
+      });
+      if (list.length > 5000) list = list.slice(-5000);
+      localStorage.setItem(key, JSON.stringify(list));
+      // threshold mail queue for owners
+      if (propertyId && (type === "card_click" || type === "detail_view")) {
+        var st = JSON.parse(localStorage.getItem("nort_os_v1") || "{}");
+        var props = (st && st.props) || {};
+        var metaP = props[propertyId];
+        if (metaP && metaP.ownerId) {
+          var clicks = list.filter(function (e) {
+            return e.propertyId === propertyId && (e.type === "card_click" || e.type === "detail_view");
+          }).length;
+          if (clicks > 0 && clicks % 10 === 0) {
+            var q = JSON.parse(localStorage.getItem("nort_os_mail_queue") || "[]");
+            q.push({ ts: Date.now(), kind: "threshold_10", propertyId: propertyId });
+            localStorage.setItem("nort_os_mail_queue", JSON.stringify(q.slice(-200)));
+          }
+        }
+      }
+    } catch (e) {}
+  },
+  isPublished: function (propertyId) {
+    try {
+      var st = JSON.parse(localStorage.getItem("nort_os_v1") || "null");
+      if (!st || !st.props || !st.props[propertyId]) return true;
+      var s = st.props[propertyId].status || "published";
+      return s === "published" || s === "reserved";
+    } catch (e) { return true; }
+  }
+};
 "use strict";
 const WA="529843237592";
 const EMAIL=(window.RN_EMAIL||"alejolucatelli@gmail.com").trim();
@@ -161,6 +205,10 @@ window.findProp=findProp;
 
 function getFiltered(){
   let s=(allProperties&&allProperties.length?allProperties:featured||[]).slice();
+  // NORT OS availability
+  if(window.NORT_OS&&window.NORT_OS.isPublished){
+    s=s.filter(function(p){return window.NORT_OS.isPublished(p.id)});
+  }
   if(window.filterBeds&&window.filterBeds!=="all"){
     s=s.filter(function(p){
       var k=p.bedsKey||"";
@@ -366,6 +414,7 @@ function openDetail(p){
     __rnCtx.overlay=true;
   }
   currentDetail=p;
+  try{window.NORT_OS&&window.NORT_OS.track("detail_view",p.id,{name:p.name})}catch(e){}
   detailIdx=0;
   detailImgs=((p.images&&p.images.length)?p.images.slice():[]).map(function(u){return driveOpt(u,1400)});
   if(!detailImgs.length)detailImgs=[safeImg(p,0,1400)];
@@ -622,7 +671,7 @@ function renderGrid(){
   grid.querySelectorAll(".rn-card").forEach(function(card){
     card.onclick=function(){
       const p=findProp(card.getAttribute("data-id"));
-      if(p){saveNavCtx();__rnCtx.overlay=true;__rnCtx.view=window.catalogView||"grid";var ov=document.getElementById("allOverlay");if(ov){ov.classList.remove("open");ov.style.setProperty("display","none","important")}document.body.classList.remove("catalog-open");openDetail(p)}
+      if(p){try{window.NORT_OS&&window.NORT_OS.track("card_click",p.id,{view:window.catalogView})}catch(e){}saveNavCtx();__rnCtx.overlay=true;__rnCtx.view=window.catalogView||"grid";var ov=document.getElementById("allOverlay");if(ov){ov.classList.remove("open");ov.style.setProperty("display","none","important")}document.body.classList.remove("catalog-open");openDetail(p)}
     };
   });
   if(window.catalogView==="map")updateMapMarkers(filtered);
@@ -811,4 +860,22 @@ if(!tryBuild()){
   window.__RN_ON_DATA=function(){tryBuild()};
   setTimeout(function(){if(!tryBuild())buildGallery()},2500);
 }
+
+document.addEventListener("click",function(ev){
+  var a=ev.target&&ev.target.closest?ev.target.closest("a[href*='wa.me'],a[href*='whatsapp']"):null;
+  if(!a)return;
+  try{
+    var id=(currentDetail&&currentDetail.id)||null;
+    window.NORT_OS&&window.NORT_OS.track("whatsapp_click",id,{href:a.href});
+  }catch(e){}
+},true);
+document.addEventListener("click",function(ev){
+  var a=ev.target&&ev.target.closest?ev.target.closest("a[href^='mailto:']"):null;
+  if(!a)return;
+  try{
+    var id=(currentDetail&&currentDetail.id)||null;
+    window.NORT_OS&&window.NORT_OS.track("email_click",id,{href:a.href});
+  }catch(e){}
+},true);
+
 })();
