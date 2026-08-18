@@ -3,9 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node scripts/build-data.mjs",
     "sync": "node scripts/sync-drive.mjs",
+    "build": "node scripts/build-data.mjs",
     "publish": "node scripts/publish.mjs",
-    "deploy": "node scripts/build-data.mjs && node scripts/publish.mjs"
+    "deploy": "node scripts/build-data.mjs && node scripts/publish.mjs",
+    "sync:full": "node scripts/sync-drive.mjs && node scripts/build-data.mjs && node scripts/publish.mjs",
+    "inventory": "node scripts/sync-drive.mjs"
   }
 }
