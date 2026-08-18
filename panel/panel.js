@@ -214,7 +214,7 @@
       html += '<div class="pulse-label">' + esc(row.pulse.label) + " · " + row.pulse.intent + " intenciones</div></div></div></article>";
     });
     html += "</div>";
-    html += '<p class="note">Modo local · sin Render ni pagos. Datos en este dispositivo. Creá owners y asigná props con normalidad.</p>';
+    html += '<p class="note">GitHub Pages · 100% gratis. Contacto real por WhatsApp/email del sitio. Este panel es solo control e información.</p>';
     $("main").innerHTML = html;
   }
 
@@ -434,24 +434,6 @@
   };
 
   
-  // Optional public API URL (for when server is deployed)
-  try {
-    var apiInput = $("apiConfig");
-    var saveApi = $("saveApiBtn");
-    if (apiInput) {
-      apiInput.value = localStorage.getItem("nort_api") || DEFAULT_API || "";
-    }
-    if (saveApi) {
-      saveApi.onclick = function () {
-        var v = ($("apiConfig").value || "").trim().replace(/\/$/, "");
-        if (v) localStorage.setItem("nort_api", v);
-        else localStorage.removeItem("nort_api");
-        alert(v ? "API guardada: " + v + "\nRecargá e iniciá sesión (modo servidor si está online)." : "API borrada · modo local");
-        location.reload();
-      };
-    }
-  } catch (e) {}
-
   (async function boot() {
     await loadCatalog();
     mode = "local";
