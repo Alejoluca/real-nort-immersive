@@ -16,6 +16,23 @@ window.NORT_OS = window.NORT_OS || {
       });
       if (list.length > 5000) list = list.slice(-5000);
       localStorage.setItem(key, JSON.stringify(list));
+      var api = window.NORT_API || localStorage.getItem("nort_api") || "";
+      if (api && typeof navigator !== "undefined" && navigator.sendBeacon) {
+        try {
+          navigator.sendBeacon(api + "/api/events", new Blob([JSON.stringify({
+            type: type, propertyId: propertyId || null, meta: meta || {}
+          })], { type: "application/json" }));
+        } catch (e1) {}
+      } else if (api) {
+        try {
+          fetch(api + "/api/events", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: type, propertyId: propertyId || null, meta: meta || {} }),
+            keepalive: true
+          }).catch(function(){});
+        } catch (e2) {}
+      }
       // threshold mail queue for owners
       if (propertyId && (type === "card_click" || type === "detail_view")) {
         var st = JSON.parse(localStorage.getItem("nort_os_v1") || "{}");
@@ -36,11 +53,23 @@ window.NORT_OS = window.NORT_OS || {
   },
   isPublished: function (propertyId) {
     try {
+      var map = window.__NORT_STATUS_MAP;
+      if (map && map[propertyId]) {
+        var s = map[propertyId];
+        return s === "published" || s === "reserved";
+      }
       var st = JSON.parse(localStorage.getItem("nort_os_v1") || "null");
       if (!st || !st.props || !st.props[propertyId]) return true;
-      var s = st.props[propertyId].status || "published";
-      return s === "published" || s === "reserved";
+      var s2 = st.props[propertyId].status || "published";
+      return s2 === "published" || s2 === "reserved";
     } catch (e) { return true; }
+  },
+  loadStatusMap: function () {
+    var api = window.NORT_API || localStorage.getItem("nort_api") || "";
+    if (!api) return;
+    fetch(api + "/api/events/status-map").then(function (r) { return r.json(); }).then(function (d) {
+      window.__NORT_STATUS_MAP = d.statuses || {};
+    }).catch(function () {});
   }
 };
 "use strict";
@@ -434,20 +463,33 @@ function openDetail(p){
   }).join("");
   if(counter)counter.textContent="1 / "+n;
 
+  var rt = (p.rentalType || "long");
+  var priceLabel = p.price || "Precio negociable";
+  var priceExtra = "";
+  if (rt === "vacation" && p.priceNight) priceLabel = p.priceNight;
+  if (rt === "both") {
+    priceLabel = p.priceNight ? p.priceNight : (p.price || "Consultar");
+    if (p.price) priceExtra = '<div class="meta-item"><span class="meta-label">Mensual</span><span class="meta-value price">'+esc(p.price)+'</span></div>';
+  }
+  if (rt === "long") priceLabel = p.price || "Precio negociable";
+  var typeBadge = rt === "vacation" ? "Vacacional" : (rt === "both" ? "Vacacional + largo plazo" : "Largo plazo");
   info.innerHTML=
     '<span class="slide-tag">'+esc(p.tag||p.loc||"")+(n>1?" · "+n+" fotos":"")+'</span>'+
     '<h2 class="slide-title" style="font-size:clamp(1.5rem,3.5vw,2.2rem)">'+esc(p.name)+'</h2>'+
-    '<p class="slide-location">'+esc(p.loc||"Tulum")+'</p>'+
+    '<p class="slide-location">'+esc(p.loc||"Tulum")+' · '+esc(typeBadge)+'</p>'+
     '<p class="slide-desc">'+esc(p.desc||"")+'</p>'+
     '<div class="slide-meta">'+
     '<div class="meta-item"><span class="meta-label">Tipo</span><span class="meta-value">'+esc(p.beds||"—")+'</span></div>'+
-    '<div class="meta-item"><span class="meta-label">Precio</span><span class="meta-value price">'+esc(p.price||"Precio negociable")+'</span></div>'+
+    '<div class="meta-item"><span class="meta-label">Precio</span><span class="meta-value price">'+esc(priceLabel)+'</span></div>'+
+    priceExtra+
     '</div>'+
+    '<div id="rnStayBox" class="rn-stay-box"></div>'+
     '<div class="slide-actions">'+
-    '<a class="cta gold" href="'+waMsg(p)+'" target="_blank" rel="noopener">WhatsApp</a>'+
-    '<a class="cta" href="'+emailMsg(p)+'">Email</a>'+
+    '<a class="cta gold" id="rnWaCta" href="'+waMsg(p)+'" target="_blank" rel="noopener">WhatsApp</a>'+
+    '<a class="cta" id="rnMailCta" href="'+emailMsg(p)+'">Email</a>'+
     '<a class="cta" href="'+mapsUrl(p)+'" target="_blank" rel="noopener">Maps</a>'+
     '</div>';
+  try { if (window.__RN_mountStay) window.__RN_mountStay(p); } catch (e) {}
 
   var det=document.getElementById("detail");
   det.classList.add("open");
@@ -643,7 +685,8 @@ function renderGrid(){
     html+='<p class="rn-card-loc">'+esc(p.loc||"Tulum")+'</p>';
     html+='<h3 class="rn-card-name">'+esc(p.name)+'</h3>';
     html+='<p class="rn-card-meta">'+esc(p.beds||"")+' · '+ni+' fotos</p>';
-    html+='<p class="rn-card-price">'+esc(p.price||"Precio negociable")+'</p>';
+    html+='<p class="rn-card-price">'+esc((p.rentalType==="vacation"&&p.priceNight)?p.priceNight:(p.price||"Precio negociable"))+'</p>';
+    if(p.rentalType==="vacation"||p.rentalType==="both")html+='<p class="rn-card-mode">Vacacional</p>';
     html+='</div></article>';
   }
   grid.innerHTML=html;
@@ -861,6 +904,7 @@ if(!tryBuild()){
   setTimeout(function(){if(!tryBuild())buildGallery()},2500);
 }
 
+try{window.NORT_OS&&window.NORT_OS.loadStatusMap&&window.NORT_OS.loadStatusMap()}catch(e){}
 document.addEventListener("click",function(ev){
   var a=ev.target&&ev.target.closest?ev.target.closest("a[href*='wa.me'],a[href*='whatsapp']"):null;
   if(!a)return;
@@ -877,5 +921,94 @@ document.addEventListener("click",function(ev){
     window.NORT_OS&&window.NORT_OS.track("email_click",id,{href:a.href});
   }catch(e){}
 },true);
+
+
+
+window.__RN_mountStay = function (p) {
+  var box = document.getElementById("rnStayBox");
+  if (!box || !window.RNAvail || !RNAvail.isVacation(p)) {
+    if (box) box.innerHTML = "";
+    return;
+  }
+  var state = { y: new Date().getFullYear(), m: new Date().getMonth(), start: null, end: null };
+  function nights() {
+    return state.start && state.end ? RNAvail.nightsBetween(state.start, state.end) : 0;
+  }
+  function conflict() {
+    if (!state.start || !state.end) return false;
+    return RNAvail.rangeHasBlocked(state.start, state.end, p.blockedRanges || []);
+  }
+  function refreshLinks() {
+    var opts = {};
+    if (state.start && state.end && state.end > state.start) {
+      opts.checkIn = state.start;
+      opts.checkOut = state.end;
+      opts.nights = nights();
+      opts.conflict = conflict();
+    }
+    var wa = document.getElementById("rnWaCta");
+    var em = document.getElementById("rnMailCta");
+    if (wa) wa.href = waMsg(p, opts);
+    if (em) em.href = emailMsg(p, opts);
+  }
+  function paint() {
+    var minN = p.minNights || 2;
+    var html = '<div class="rn-stay">';
+    html += '<div class="rn-stay-title">Disponibilidad vacacional</div>';
+    html += '<p class="rn-stay-note">Sin reserva online · consultá por WhatsApp con tus fechas</p>';
+    if (p.priceNight) html += '<div class="rn-stay-price">' + esc(p.priceNight) + (minN > 1 ? " · mín. " + minN + " noches" : "") + "</div>";
+    html += RNAvail.renderMonthHTML(p, state.y, state.m, { nav: true, selected: { start: state.start, end: state.end } });
+    html += '<div class="rn-stay-fields">';
+    html += '<label>Check-in<input type="date" id="rnCi" value="' + (state.start || "") + '"/></label>';
+    html += '<label>Check-out<input type="date" id="rnCo" value="' + (state.end || "") + '"/></label>';
+    html += "</div>";
+    var n = nights();
+    if (n > 0) {
+      var bad = conflict() || n < minN;
+      html += '<div class="rn-stay-status ' + (bad ? "bad" : "ok") + '">';
+      html += n + " noche" + (n === 1 ? "" : "s");
+      if (n < minN) html += " · mínimo " + minN;
+      if (conflict()) html += " · hay noches ocupadas en el rango";
+      else html += " · libre en calendario";
+      html += "</div>";
+    } else {
+      html += '<div class="rn-stay-status">Elegí check-in y check-out</div>';
+    }
+    html += "</div>";
+    box.innerHTML = html;
+    box.querySelectorAll(".rn-cal-nav").forEach(function (btn) {
+      btn.onclick = function () {
+        var dir = Number(btn.getAttribute("data-dir"));
+        state.m += dir;
+        if (state.m > 11) { state.m = 0; state.y++; }
+        if (state.m < 0) { state.m = 11; state.y--; }
+        paint();
+      };
+    });
+    box.querySelectorAll(".rn-cal-day.free,.rn-cal-day.blocked").forEach(function (btn) {
+      btn.onclick = function () {
+        var d = btn.getAttribute("data-date");
+        if (!d) return;
+        if (!state.start || (state.start && state.end)) {
+          state.start = d; state.end = null;
+        } else if (d < state.start) {
+          state.end = state.start; state.start = d;
+        } else if (d === state.start) {
+          state.start = null; state.end = null;
+        } else {
+          state.end = d;
+        }
+        paint();
+        refreshLinks();
+      };
+    });
+    var ci = document.getElementById("rnCi");
+    var co = document.getElementById("rnCo");
+    if (ci) ci.onchange = function () { state.start = ci.value || null; paint(); refreshLinks(); };
+    if (co) co.onchange = function () { state.end = co.value || null; paint(); refreshLinks(); };
+    refreshLinks();
+  }
+  paint();
+};
 
 })();
