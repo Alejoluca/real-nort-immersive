@@ -9,6 +9,165 @@
   var GH_TOKEN_KEY = "nort_gh_token";
   function getGhToken(){ return sessionStorage.getItem(GH_TOKEN_KEY) || localStorage.getItem(GH_TOKEN_KEY) || ""; }
   function setGhToken(t){ if(t){ localStorage.setItem(GH_TOKEN_KEY,t); sessionStorage.setItem(GH_TOKEN_KEY,t);} }
+
+  var GDRIVE_KEY = "nort_gdrive_key";
+  function getDriveKey(){ return localStorage.getItem(GDRIVE_KEY) || sessionStorage.getItem(GDRIVE_KEY) || ""; }
+  function setDriveKey(k){ if(k){ localStorage.setItem(GDRIVE_KEY,k); sessionStorage.setItem(GDRIVE_KEY,k);} }
+
+  function extractDriveFolderId(input) {
+    var s = String(input || "").trim();
+    if (!s) return null;
+    var m = s.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+    if (m) return m[1];
+    m = s.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (m) return m[1];
+    if (/^[a-zA-Z0-9_-]{20,}$/.test(s)) return s;
+    return null;
+  }
+
+  function parseDriveFolderInputs(text) {
+    return String(text || "").split(/[\n,;]+/).map(function (x) { return x.trim(); }).filter(Boolean)
+      .map(extractDriveFolderId).filter(Boolean)
+      .filter(function (v, i, a) { return a.indexOf(v) === i; });
+  }
+
+  function driveImgUrl(fileId, w) {
+    return "https://lh3.googleusercontent.com/d/" + fileId + "=w" + (w || 1600);
+  }
+
+  function isDriveImage(f) {
+    var mt = (f.mimeType || "").toLowerCase();
+    var n = (f.name || "").toLowerCase();
+    if (mt.indexOf("image/") === 0 && mt.indexOf("heic") < 0 && mt.indexOf("heif") < 0) return true;
+    return /\.(jpe?g|png|webp|gif)$/i.test(n);
+  }
+
+  async function driveFetchFolderMeta(folderId, key) {
+    var url = "https://www.googleapis.com/drive/v3/files/" + encodeURIComponent(folderId) +
+      "?fields=id,name,mimeType&key=" + encodeURIComponent(key);
+    var res = await fetch(url);
+    if (!res.ok) throw new Error("Carpeta " + folderId.slice(0, 8) + "… HTTP " + res.status + " (¿pública + API Key?)");
+    return res.json();
+  }
+
+  async function driveListImages(folderId, key) {
+    var files = [];
+    var pageToken = null;
+    do {
+      var q = encodeURIComponent("'" + folderId + "' in parents and trashed=false");
+      var url = "https://www.googleapis.com/drive/v3/files?q=" + q +
+        "&fields=nextPageToken,files(id,name,mimeType)" +
+        "&pageSize=200&orderBy=name_natural&key=" + encodeURIComponent(key);
+      if (pageToken) url += "&pageToken=" + encodeURIComponent(pageToken);
+      var res = await fetch(url);
+      if (!res.ok) {
+        var body = await res.text();
+        throw new Error("Listado Drive HTTP " + res.status + " " + body.slice(0, 140));
+      }
+      var data = await res.json();
+      (data.files || []).forEach(function (f) {
+        if (isDriveImage(f)) files.push(f);
+      });
+      pageToken = data.nextPageToken || null;
+    } while (pageToken);
+    return files;
+  }
+
+  async function driveListSubfolders(folderId, key) {
+    var q = encodeURIComponent("'" + folderId + "' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'");
+    var url = "https://www.googleapis.com/drive/v3/files?q=" + q +
+      "&fields=files(id,name)&pageSize=200&orderBy=name_natural&key=" + encodeURIComponent(key);
+    var res = await fetch(url);
+    if (!res.ok) return [];
+    var data = await res.json();
+    return data.files || [];
+  }
+
+  function propFromDriveFolder(folder, images) {
+    var name = folder.name || "Propiedad Drive";
+    var id = slugify(name);
+    var base = id;
+    var n = 2;
+    while (catalog.some(function (p) { return p.id === id; }) || (content.custom || []).some(function (p) { return p.id === id; })) {
+      id = base + "-" + n;
+      n++;
+    }
+    var beds = "2 Recámaras";
+    var bk = bedsKeyFrom(name);
+    if (/estudio|loft|studio/i.test(name)) beds = "Estudio / Loft";
+    else if (/\b1\s*rec/i.test(name)) beds = "1 Recámara";
+    else if (/\b3\s*rec/i.test(name)) beds = "3 Recámaras";
+    else if (/\b4/i.test(name)) beds = "4+ Recámaras";
+    else if (/\b2\s*rec/i.test(name)) beds = "2 Recámaras";
+    return {
+      id: id,
+      name: name,
+      loc: "Tulum",
+      beds: beds,
+      bedsKey: bk,
+      price: "Precio negociable",
+      pricePin: "·",
+      priceNight: "",
+      tag: "Tulum · " + beds,
+      desc: name + " — galería importada desde Google Drive. Consultá por WhatsApp.",
+      images: images.map(function (f) { return driveImgUrl(f.id, 1600); }),
+      lat: 20.211,
+      lng: -87.465,
+      regionKey: "tulum",
+      status: "published",
+      rentalType: "long",
+      minNights: 2,
+      blockedRanges: [],
+      driveFolderId: folder.id,
+      source: "drive-import"
+    };
+  }
+
+  async function importDriveFolders(folderIds, opts) {
+    opts = opts || {};
+    var key = getDriveKey();
+    if (!key) throw new Error("Falta Google API Key (Drive API habilitada)");
+    var report = [];
+    for (var i = 0; i < folderIds.length; i++) {
+      var fid = folderIds[i];
+      var meta = await driveFetchFolderMeta(fid, key);
+      var images = await driveListImages(fid, key);
+      if (!images.length && opts.subfolders !== false) {
+        var subs = await driveListSubfolders(fid, key);
+        if (subs.length) {
+          for (var s = 0; s < subs.length; s++) {
+            var subImgs = await driveListImages(subs[s].id, key);
+            if (!subImgs.length) {
+              report.push({ id: subs[s].id, name: subs[s].name, ok: false, reason: "sin imágenes" });
+              continue;
+            }
+            var prop = propFromDriveFolder(subs[s], subImgs);
+            content.custom = (content.custom || []).filter(function (c) { return c.driveFolderId !== subs[s].id; });
+            content.custom.push(prop);
+            content.deleted = (content.deleted || []).filter(function (id) { return id !== prop.id; });
+            ensureProp(prop.id);
+            report.push({ id: prop.id, name: prop.name, ok: true, images: subImgs.length });
+          }
+          continue;
+        }
+      }
+      if (!images.length) {
+        report.push({ id: fid, name: meta.name, ok: false, reason: "sin imágenes" });
+        continue;
+      }
+      var prop2 = propFromDriveFolder(meta, images);
+      content.custom = (content.custom || []).filter(function (c) { return c.driveFolderId !== meta.id; });
+      content.custom.push(prop2);
+      content.deleted = (content.deleted || []).filter(function (id) { return id !== prop2.id; });
+      ensureProp(prop2.id);
+      report.push({ id: prop2.id, name: prop2.name, ok: true, images: images.length });
+    }
+    saveContent();
+    rebuildCatalog();
+    return report;
+  }
+
+
   var charts = [];
   var periodDays = 7;
 
@@ -981,7 +1140,19 @@
     var nPatch = Object.keys(content.props || {}).length;
     var nCustom = (content.custom || []).length;
     var nDel = (content.deleted || []).length;
-    var html = '<div class="panel-block"><h2>Publicar al sitio</h2>';
+    var html = '<div class="panel-block"><h2>Importar desde Google Drive</h2>';
+    html += '<p class="note">Pegá uno o varios links de carpetas (una por línea). Cada carpeta con fotos = una propiedad. Si la carpeta solo tiene subcarpetas, se importa cada subcarpeta.</p>';
+    html += '<label class="field"><span>Google API Key (Drive API)</span>';
+    html += '<input id="driveKey" type="password" placeholder="AIza..." value="' + esc(getDriveKey()) + '"/></label>';
+    html += '<label class="field" style="margin-top:10px"><span>Links o IDs de carpetas</span>';
+    html += '<textarea id="driveFolders" rows="4" placeholder="https://drive.google.com/drive/folders/XXXX\nhttps://drive.google.com/drive/folders/YYYY"></textarea></label>';
+    html += '<div class="toolbar" style="margin-top:12px">';
+    html += '<button type="button" class="btn gold" id="btnDriveImport">Importar y publicar</button>';
+    html += '<button type="button" class="btn ghost sm" id="btnDrivePreview">Solo previsualizar</button></div>';
+    html += '<pre id="driveReport" class="note" style="display:none;white-space:pre-wrap;margin-top:12px"></pre>';
+    html += '<p class="note">Las carpetas deben ser “Cualquier persona con el enlace → Lector”. La API Key se guarda solo en este navegador.</p></div>';
+
+    html += '<div class="panel-block"><h2>Publicar al sitio</h2>';
     html += '<p class="note">Sube <code>content-overrides.json</code> al repo para que <strong>todos</strong> vean precios, títulos, descripciones, disponibilidad e imágenes nuevas.</p>';
     html += '<div class="alert-strip">';
     html += '<span class="alert-chip">' + nPatch + " editadas</span>";
@@ -1011,6 +1182,39 @@
       if (t) setGhToken(t);
       publishToGitHub();
     };
+
+    async function runDriveImport(publish) {
+      var key = $("driveKey") && $("driveKey").value.trim();
+      if (key) setDriveKey(key);
+      var ids = parseDriveFolderInputs($("driveFolders") && $("driveFolders").value);
+      var box = $("driveReport");
+      if (!ids.length) { alert("Pegá al menos un link o ID de carpeta"); return; }
+      if (!getDriveKey()) { alert("Falta Google API Key"); return; }
+      box.style.display = "block";
+      box.textContent = "Importando " + ids.length + " carpeta(s)…";
+      try {
+        var report = await importDriveFolders(ids, { subfolders: true });
+        var lines = report.map(function (r) {
+          return (r.ok ? "✓ " : "✗ ") + (r.name || r.id) + (r.ok ? (" · " + r.images + " fotos · id " + r.id) : (" · " + (r.reason || "error")));
+        });
+        box.textContent = lines.join("\n");
+        var ok = report.filter(function (r) { return r.ok; }).length;
+        if (publish && ok && getGhToken()) {
+          window.__nortQuietPub = true;
+          await publishToGitHub();
+          box.textContent += "\n\nPublicado en el sitio (" + ok + " props).";
+        } else if (publish && ok && !getGhToken()) {
+          box.textContent += "\n\nGuardado local. Configurá token GitHub abajo para publicar.";
+        }
+        if (!ok) alert("No se importó ninguna propiedad con imágenes");
+      } catch (e) {
+        box.textContent = "Error: " + (e && e.message || e);
+        alert(e && e.message || e);
+      }
+    }
+    if ($("btnDriveImport")) $("btnDriveImport").onclick = function () { runDriveImport(true); };
+    if ($("btnDrivePreview")) $("btnDrivePreview").onclick = function () { runDriveImport(false); };
+    if ($("driveKey")) $("driveKey").onchange = function () { if (this.value.trim()) setDriveKey(this.value.trim()); };
     if ($("ghToken")) {
       $("ghToken").onchange = function(){ if (this.value.trim()) setGhToken(this.value.trim()); };
     }
