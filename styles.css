@@ -1741,3 +1741,18 @@ body{
 #btnOwnerLogin:hover{
   background: rgba(201,168,124,.12)!important;
 }
+
+/* Price polish */
+.rn-card-price,.sheet-price,.map-card-price,.meta-value.price{
+  font-variant-numeric:tabular-nums;
+  letter-spacing:-.01em;
+  color:#e8d5b5!important;
+  font-weight:500;
+}
+.rn-card-price{font-size:13px;margin:4px 0 0;opacity:.95}
+.sheet-price{font-size:15px;margin-top:4px}
+.map-card-price{font-size:12px;color:#e8d5b5}
+.badge-avail{
+  display:inline-block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  padding:3px 8px;border-radius:999px;border:1px solid rgba(61,214,140,.35);color:#3dd68c;margin-left:6px
+}
