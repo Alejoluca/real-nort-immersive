@@ -432,6 +432,25 @@
     showLogin();
   };
 
+  
+  // Optional public API URL (for when server is deployed)
+  try {
+    var apiInput = $("apiConfig");
+    var saveApi = $("saveApiBtn");
+    if (apiInput) {
+      apiInput.value = localStorage.getItem("nort_api") || "";
+    }
+    if (saveApi) {
+      saveApi.onclick = function () {
+        var v = ($("apiConfig").value || "").trim().replace(/\/$/, "");
+        if (v) localStorage.setItem("nort_api", v);
+        else localStorage.removeItem("nort_api");
+        alert(v ? "API guardada: " + v + "\nRecargá e iniciá sesión (modo servidor si está online)." : "API borrada · modo local");
+        location.reload();
+      };
+    }
+  } catch (e) {}
+
   (async function boot() {
     await loadCatalog();
     mode = "local";
