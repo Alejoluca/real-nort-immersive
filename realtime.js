@@ -11,6 +11,7 @@
   var bc = null;
   var started = false;
   var opts = {};
+  var reconnectMs = 4000;
 
   function wsUrl() {
     return (
@@ -63,14 +64,18 @@
   function connectWs() {
     var url = wsUrl();
     if (!url || typeof WebSocket === "undefined") return;
+    // normalize https → wss, http → ws
+    if (url.indexOf("https://") === 0) url = "wss://" + url.slice(8);
+    if (url.indexOf("http://") === 0) url = "ws://" + url.slice(7);
     try {
       if (ws) {
         try { ws.close(); } catch (e) {}
         ws = null;
       }
-      // allow http page to use wss or ws
+      log("ws connecting", url);
       ws = new WebSocket(url);
       ws.onopen = function () {
+        reconnectMs = 4000;
         log("ws open", url);
         try {
           ws.send(JSON.stringify({ type: "hello", role: opts.role || "client", at: new Date().toISOString() }));
@@ -87,9 +92,11 @@
         } catch (e) {}
       };
       ws.onclose = function () {
-        log("ws close — retry 8s");
+        log("ws close — retry", reconnectMs);
         ws = null;
-        setTimeout(connectWs, 8000);
+        var wait = reconnectMs;
+        reconnectMs = Math.min(reconnectMs * 1.5, 30000);
+        setTimeout(connectWs, wait);
       };
       ws.onerror = function () { log("ws error"); };
     } catch (e) {
@@ -124,14 +131,34 @@
     } catch (e3) {}
   }
 
+  function loadRemoteConfig() {
+    var base = opts.configUrl || "realtime-config.json";
+    // panel is in /panel/ so allow relative override
+    return fetch(base + "?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (cfg) {
+        if (!cfg) return null;
+        if (cfg.pollMs) opts.pollMs = cfg.pollMs;
+        if (cfg.fastPollMs) opts.fastPollMs = cfg.fastPollMs;
+        if (cfg.wsUrl && !wsUrl()) {
+          global.NORT_WS_URL = cfg.wsUrl;
+          try { localStorage.setItem("nort_ws_url", cfg.wsUrl); } catch (e) {}
+        }
+        return cfg;
+      })
+      .catch(function () { return null; });
+  }
+
   function start(options) {
     opts = options || {};
     if (started) return api;
     started = true;
     setupBroadcast();
-    connectWs();
-    schedulePoll();
-    pullJson();
+    loadRemoteConfig().then(function () {
+      connectWs();
+      schedulePoll();
+      pullJson();
+    });
     if (typeof document !== "undefined") {
       document.addEventListener("visibilitychange", function () {
         schedulePoll();
