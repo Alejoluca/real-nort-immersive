@@ -3,18 +3,23 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node server/src/index.js",
+    "start": "node server/src/realtime-hub.js",
     "seed": "node server/src/seed.js",
     "sync": "node scripts/sync-drive.mjs",
     "build": "node scripts/build-data.mjs",
     "publish": "node scripts/publish.mjs",
     "deploy": "node scripts/build-data.mjs && node scripts/publish.mjs",
     "sync:full": "node scripts/sync-drive.mjs && node scripts/build-data.mjs && node scripts/publish.mjs",
-    "inventory": "node scripts/sync-drive.mjs"
+    "inventory": "node scripts/sync-drive.mjs",
+    "start:hub": "node server/src/realtime-hub.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "ws": "^8.18.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
