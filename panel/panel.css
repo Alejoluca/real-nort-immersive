@@ -309,3 +309,18 @@ select:-webkit-autofill{
   transition:background-color 99999s ease-in-out 0s;
   box-shadow:0 0 0 1000px #0a0a0c inset !important;
 }
+
+.prop-pick{
+  max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:16px;
+  padding:8px;background:rgba(0,0,0,.25);-webkit-overflow-scrolling:touch;
+}
+.pick-row{
+  display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;
+  font-size:13px;color:var(--text);text-transform:none;letter-spacing:0;font-weight:400;
+  cursor:pointer;
+}
+.pick-row:hover{background:rgba(255,255,255,.04)}
+.pick-row input{width:18px;height:18px;accent-color:#c9a87c}
+.pick-row span{flex:1}
+.pick-row em{font-style:normal;font-size:11px;color:var(--muted)}
+.owner-card h2{font-weight:500}
