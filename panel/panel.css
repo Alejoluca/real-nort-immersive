@@ -349,5 +349,92 @@ tr:hover td{background:rgba(154,123,79,.04)}
 
 code{font-size:13px;color:var(--gold);background:var(--gold-soft);padding:3px 7px;border-radius:8px}
 
-/* theme-color for mobile chrome */
-meta[name="theme-color"]{color:#f3f1ec}
+
+
+/* ——— Premium a11y + motion ——— */
+.skip-link{
+  position:absolute;left:12px;top:12px;z-index:100;
+  padding:12px 16px;border-radius:999px;
+  background:var(--gold);color:#fff;font-weight:600;font-size:14px;
+  transform:translateY(-120%);transition:transform .25s var(--ease);
+  text-decoration:none;
+}
+.skip-link:focus{transform:translateY(0);outline:2px solid var(--text);outline-offset:3px}
+
+:focus{outline:none}
+:focus-visible{
+  outline:2px solid var(--gold);
+  outline-offset:3px;
+}
+.btn:focus-visible,.nav button:focus-visible,.period-tabs button:focus-visible{
+  outline:2px solid var(--gold);
+  outline-offset:3px;
+}
+input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:none;
+  border-color:rgba(154,123,79,.65);
+  box-shadow:0 0 0 4px rgba(154,123,79,.16);
+}
+
+.nav button,.btn,.kpi,.pcard,.feed-item,.alert-chip,.period-tabs button,.rn-cal-day{
+  transition:
+    transform .22s var(--ease),
+    opacity .2s ease,
+    background .22s ease,
+    border-color .22s ease,
+    box-shadow .28s var(--ease),
+    color .2s ease;
+}
+
+.main > *{animation:fade .4s var(--ease) both}
+.kpi{animation:rise .45s var(--ease) both}
+.kpi:nth-child(2){animation-delay:.04s}
+.kpi:nth-child(3){animation-delay:.08s}
+.kpi:nth-child(4){animation-delay:.12s}
+.pcard{animation:rise .5s var(--ease) both}
+.panel-block{animation:fade .4s var(--ease) both}
+
+.btn.gold:hover{filter:brightness(1.03)}
+.nav button.active:hover{transform:translateY(-1px)}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+
+@media (prefers-contrast: more){
+  :root{
+    --line:rgba(28,25,20,.22);
+    --line2:rgba(28,25,20,.35);
+    --muted:rgba(28,25,20,.72);
+  }
+  .btn.gold{box-shadow:none}
+}
+
+/* Larger touch targets mobile */
+@media (max-width:720px){
+  .nav button{padding:13px 18px;font-size:14px}
+  .btn{min-height:46px}
+  .kpi .v{font-size:28px}
+  .main{padding-left:14px;padding-right:14px}
+}
+
+/* Toast live region */
+.toast-host{
+  position:fixed;right:16px;bottom:calc(16px + var(--safe-b));z-index:80;
+  display:flex;flex-direction:column;gap:8px;max-width:min(360px,calc(100vw - 32px));
+  pointer-events:none;
+}
+.toast{
+  pointer-events:auto;
+  background:#1c1914;color:#f5f5f7;
+  padding:14px 16px;border-radius:16px;font-size:14px;font-weight:500;
+  box-shadow:0 16px 40px rgba(28,25,20,.2);
+  animation:rise .35s var(--ease) both;
+}
+.toast.ok{background:#0f9f6e}
+.toast.warn{background:#c4850a}
