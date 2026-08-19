@@ -1,4 +1,4 @@
-/* Merge admin content-overrides into catalog (GitHub Pages) */
+/* Merge admin content-overrides into catalog (GitHub Pages) + realtime */
 (function () {
   function hideStatus(st) {
     return st === "draft" || st === "paused" || st === "rented";
@@ -7,7 +7,10 @@
     if (!patch) return base;
     var m = {};
     for (var k in base) if (Object.prototype.hasOwnProperty.call(base, k)) m[k] = base[k];
-    for (var j in patch) if (Object.prototype.hasOwnProperty.call(patch, j) && patch[j] !== undefined && patch[j] !== null) {
+    for (var j in patch) {
+      if (!Object.prototype.hasOwnProperty.call(patch, j)) continue;
+      if (patch[j] === undefined) continue;
+      if (patch[j] === null && j !== "ownerId") continue;
       if (j === "images" && (!patch[j] || !patch[j].length)) continue;
       m[j] = patch[j];
     }
@@ -30,6 +33,7 @@
     (ov.custom || []).forEach(function (p) {
       if (!p || !p.id || deleted[p.id]) return;
       if (hideStatus(p.status)) return;
+      if (out.some(function (x) { return x.id === x.id && x.id === p.id; })) return;
       if (out.some(function (x) { return x.id === p.id; })) return;
       out.push(p);
     });
@@ -42,8 +46,12 @@
     if (typeof window.__RN_ON_DATA === "function") {
       try { window.__RN_ON_DATA(); } catch (e2) {}
     }
+    try {
+      if (window.buildGallery) window.buildGallery();
+    } catch (e3) {}
   }
-  function load() {
+
+  function loadOnce() {
     var local = null;
     try {
       local = JSON.parse(localStorage.getItem("nort_os_content_v1") || "null");
@@ -52,23 +60,42 @@
     fetch("content-overrides.json?t=" + Date.now())
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (remote) {
-        // local admin overrides win for same browser preview
         var ov = remote || { props: {}, custom: [], deleted: [] };
         if (local) {
           ov = {
             version: Math.max(local.version || 1, ov.version || 1),
             deleted: [].concat(ov.deleted || [], local.deleted || []).filter(function (v, i, a) { return a.indexOf(v) === i; }),
             props: Object.assign({}, ov.props || {}, local.props || {}),
-            custom: (local.custom && local.custom.length ? local.custom : ov.custom) || []
+            custom: (local.custom && local.custom.length ? local.custom : ov.custom) || [],
+            updatedAt: local.updatedAt || ov.updatedAt
           };
         }
         merge(ov);
       })
-      .catch(function () {
-        if (local) merge(local);
-      });
+      .catch(function () { if (local) merge(local); });
   }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", load);
-  else load();
-  window.__RN_APPLY_CONTENT = load;
+
+  function startRealtime() {
+    if (!window.NORT_REALTIME) return;
+    window.NORT_REALTIME.start({
+      role: "public",
+      contentUrl: "content-overrides.json",
+      fastPollMs: 4000,
+      pollMs: 10000,
+      onContent: function (payload, source) {
+        if (!payload) return;
+        // public site: prefer remote payload as truth (no local admin overlay here)
+        merge(payload);
+        try { localStorage.setItem("nort_os_content_v1_public_cache", JSON.stringify(payload)); } catch (e) {}
+      }
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () { loadOnce(); startRealtime(); });
+  } else {
+    loadOnce();
+    startRealtime();
+  }
+  window.__RN_APPLY_CONTENT = loadOnce;
 })();
