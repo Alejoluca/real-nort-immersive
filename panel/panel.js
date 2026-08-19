@@ -1300,7 +1300,10 @@
     window.__nortSync = window.__nortSync || {};
     window.__nortSync.status = "synced";
     window.__nortSync.lastPub = payload.updatedAt;
-    if (!window.__nortQuietPub) alert("Publicado. En ~1 min el sitio y el equipo verán los cambios.");
+    try {
+      if (window.NORT_REALTIME) window.NORT_REALTIME.broadcastContent(payload);
+    } catch (e) {}
+    if (!window.__nortQuietPub) alert("Publicado. Sincronización enviada — el sitio/equipo se actualiza al instante o en segundos.");
     window.__nortQuietPub = false;
   }
 
@@ -1336,7 +1339,11 @@
     html += '<button class="btn ghost sm" id="btnPull">Traer del sitio</button>';
     html += '<button class="btn ghost sm" id="btnDl">Descargar JSON</button>';
     html += '<button class="btn ghost sm" id="btnPrev">Preview local ' + (content.livePreview !== false ? "ON" : "OFF") + "</button></div>";
-    html += '<p class="note">Token: Settings → Developer settings → Personal access tokens (contents: write en el repo).</p></div>';
+    html += '<p class="note">Token: Settings → Developer settings → Personal access tokens (contents: write en el repo).</p>';
+    html += '<label class="field" style="margin-top:12px"><span>WebSocket hub (opcional)</span>';
+    html += '<input id="wsUrl" type="url" placeholder="wss://tu-hub.ejemplo.com" value="' + esc((localStorage.getItem("nort_ws_url")||"")) + '"/></label>';
+    html += '<button type="button" class="btn ghost sm" id="btnWsSave" style="margin-top:8px">Guardar WS</button>';
+    html += '<p class="note">Sin hub: sync por polling del JSON publicado (gratis en GitHub Pages). Con hub: push instantáneo entre paneles.</p></div>';
 
     html += '<div class="panel-block"><h2>Export / backup</h2><div class="toolbar">';
     html += '<button class="btn ghost sm" id="dlCsv">CSV métricas</button>';
@@ -1386,6 +1393,12 @@
     if ($("btnDriveImport")) $("btnDriveImport").onclick = function () { runDriveImport(true); };
     if ($("btnDrivePreview")) $("btnDrivePreview").onclick = function () { runDriveImport(false); };
     if ($("driveKey")) $("driveKey").onchange = function () { if (this.value.trim()) setDriveKey(this.value.trim()); };
+    if ($("btnWsSave")) $("btnWsSave").onclick = function () {
+      var u = $("wsUrl") && $("wsUrl").value.trim();
+      if (window.NORT_REALTIME) window.NORT_REALTIME.setWsUrl(u);
+      else try { localStorage.setItem("nort_ws_url", u || ""); } catch (e) {}
+      alert(u ? "WebSocket configurado" : "WebSocket desactivado — solo polling");
+    };
     if ($("ghToken")) {
       $("ghToken").onchange = function(){ if (this.value.trim()) setGhToken(this.value.trim()); };
     }
@@ -1510,6 +1523,32 @@
     window.__nortSync.lastPull = pull;
     window.__nortSync.status = pull.ok ? "synced" : "local";
     console.log("[NORT OS] base", baseCatalog.length, "resolved", catalog.length, "sync", pull);
+    try {
+      if (window.NORT_REALTIME) {
+        window.NORT_REALTIME.start({
+          role: "panel",
+          contentUrl: "../content-overrides.json",
+          fastPollMs: 3000,
+          pollMs: 8000,
+          onContent: function (payload, source) {
+            if (!payload) return;
+            content.props = payload.props || {};
+            content.custom = payload.custom || [];
+            content.deleted = payload.deleted || [];
+            content.users = payload.users || content.users || [];
+            content.updatedAt = payload.updatedAt || content.updatedAt;
+            saveContent();
+            if (typeof syncUsersFromContent === "function") syncUsersFromContent();
+            rebuildCatalog();
+            window.__nortSync = window.__nortSync || {};
+            window.__nortSync.status = "synced";
+            window.__nortSync.lastPull = { ok: true, at: content.updatedAt, source: source };
+            // soft refresh current view if logged in
+            try { if (currentUser()) { renderNav(); render(); } } catch (e) {}
+          }
+        });
+      }
+    } catch (e) {}
     $("boot").hidden = true;
     if (currentUser()) showApp(); else showLogin();
   })();
