@@ -1251,6 +1251,46 @@
     $("main").innerHTML = html; bindCards();
   }
 
+  
+  async function publishRealtimeConfig(wsUrlValue) {
+    var token = getGhToken();
+    if (!token) throw new Error("Falta token GitHub para guardar wsUrl en el sitio");
+    var path = "realtime-config.json";
+    var api = "https://api.github.com/repos/Alejoluca/real-nort-immersive/contents/" + path;
+    var payload = {
+      wsUrl: (wsUrlValue || "").replace(/\/$/, ""),
+      pollMs: 4000,
+      fastPollMs: 2500,
+      updatedAt: new Date().toISOString()
+    };
+    if (payload.wsUrl.indexOf("https://") === 0) payload.wsUrl = "wss://" + payload.wsUrl.slice(8);
+    if (payload.wsUrl.indexOf("http://") === 0) payload.wsUrl = "ws://" + payload.wsUrl.slice(7);
+    var sha = null;
+    try {
+      var cur = await fetch(api + "?ref=main", {
+        headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json" }
+      });
+      if (cur.ok) sha = (await cur.json()).sha;
+    } catch (e) {}
+    var body = {
+      message: "chore: realtime wsUrl " + (payload.wsUrl || "clear"),
+      content: btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2)))),
+      branch: "main"
+    };
+    if (sha) body.sha = sha;
+    var res = await fetch(api, {
+      method: "PUT",
+      headers: {
+        Authorization: "Bearer " + token,
+        Accept: "application/vnd.github+json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error("GitHub " + res.status + " " + (await res.text()).slice(0, 180));
+    return payload;
+  }
+
   async function publishToGitHub() {
     var token = ($("ghToken") && $("ghToken").value.trim()) || getGhToken();
     if (!token) return alert("Pegá un GitHub token con permiso repo (contents:write)");
@@ -1393,11 +1433,20 @@
     if ($("btnDriveImport")) $("btnDriveImport").onclick = function () { runDriveImport(true); };
     if ($("btnDrivePreview")) $("btnDrivePreview").onclick = function () { runDriveImport(false); };
     if ($("driveKey")) $("driveKey").onchange = function () { if (this.value.trim()) setDriveKey(this.value.trim()); };
-    if ($("btnWsSave")) $("btnWsSave").onclick = function () {
+    if ($("btnWsSave")) $("btnWsSave").onclick = async function () {
       var u = $("wsUrl") && $("wsUrl").value.trim();
       if (window.NORT_REALTIME) window.NORT_REALTIME.setWsUrl(u);
       else try { localStorage.setItem("nort_ws_url", u || ""); } catch (e) {}
-      alert(u ? "WebSocket configurado" : "WebSocket desactivado — solo polling");
+      try {
+        if (getGhToken()) {
+          await publishRealtimeConfig(u);
+          alert(u ? "WS guardado en este dispositivo y publicado para todo el equipo/sitio" : "WS desactivado y publicado");
+        } else {
+          alert(u ? "WS solo en este dispositivo. Token GitHub en Publicar para compartirlo al equipo." : "WS desactivado");
+        }
+      } catch (err) {
+        alert("WS local OK. Publicar config falló: " + (err && err.message || err));
+      }
     };
     if ($("ghToken")) {
       $("ghToken").onchange = function(){ if (this.value.trim()) setGhToken(this.value.trim()); };
@@ -1528,6 +1577,7 @@
         window.NORT_REALTIME.start({
           role: "panel",
           contentUrl: "../content-overrides.json",
+          configUrl: "../realtime-config.json",
           fastPollMs: 3000,
           pollMs: 8000,
           onContent: function (payload, source) {
