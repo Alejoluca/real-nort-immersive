@@ -6,37 +6,46 @@
 <meta name="robots" content="noindex,nofollow"/>
 <meta name="theme-color" content="#f3f1ec"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="color-scheme" content="light"/>
 <title>NORT OS</title>
-<link rel="stylesheet" href="panel.css?v=99"/>
+<link rel="stylesheet" href="panel.css?v=100"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
 </head>
 <body>
-<div id="boot" class="boot">NORT OS</div>
-<section id="loginView" class="view login-view" hidden>
+<a class="skip-link" href="#main">Saltar al contenido</a>
+<div id="boot" class="boot" role="status" aria-live="polite">NORT OS</div>
+<section id="loginView" class="view login-view" hidden aria-label="Iniciar sesión">
   <div class="login-card">
     <p class="brand-kicker">Real Nort México</p>
     <h1>NORT OS</h1>
     <p class="login-sub">Inventario, disponibilidad y publicación en vivo</p>
-    <label class="field"><span>Usuario</span><input id="loginUser" autocomplete="username" placeholder="admin"/></label>
-    <label class="field"><span>Contraseña</span><input id="loginPass" type="password" autocomplete="current-password"/></label>
-    <p id="loginErr" class="err" hidden></p>
+    <label class="field" for="loginUser"><span>Usuario</span>
+      <input id="loginUser" name="username" autocomplete="username" placeholder="admin" required/>
+    </label>
+    <label class="field" for="loginPass"><span>Contraseña</span>
+      <input id="loginPass" name="password" type="password" autocomplete="current-password" required/>
+    </label>
+    <p id="loginErr" class="err" hidden role="alert"></p>
     <button type="button" class="btn gold" id="loginBtn">Entrar</button>
     <p class="login-hint">Mismo acceso para tu equipo · contenido publicado en el sitio</p>
   </div>
 </section>
 <section id="appView" class="view app-view" hidden>
   <header class="topbar">
-    <div class="topbar-left"><span class="logo">NORT OS</span><span id="roleBadge" class="badge"></span></div>
+    <div class="topbar-left">
+      <span class="logo" aria-label="NORT OS">NORT OS</span>
+      <span id="roleBadge" class="badge"></span>
+    </div>
     <div class="topbar-right">
       <span id="userLabel" class="user-label"></span>
       <a class="btn ghost sm" href="../index.html" target="_blank" rel="noopener">Sitio</a>
       <button type="button" class="btn ghost sm" id="logoutBtn">Salir</button>
     </div>
   </header>
-  <nav id="nav" class="nav"></nav>
-  <main id="main" class="main"></main>
+  <nav id="nav" class="nav" aria-label="Secciones del panel"></nav>
+  <main id="main" class="main" tabindex="-1"></main>
 </section>
-<script src="../realtime.js?v=v98"></script>
-<script src="panel.js?v=99"></script>
+<script src="../realtime.js?v=v100"></script>
+<script src="panel.js?v=100"></script>
 </body>
 </html>
