@@ -171,6 +171,24 @@
   var charts = [];
   var periodDays = 7;
 
+
+  function toast(msg, kind) {
+    var host = document.querySelector(".toast-host");
+    if (!host) {
+      host = document.createElement("div");
+      host.className = "toast-host";
+      host.setAttribute("aria-live", "polite");
+      document.body.appendChild(host);
+    }
+    var el = document.createElement("div");
+    el.className = "toast" + (kind ? " " + kind : "");
+    el.textContent = String(msg || "");
+    host.appendChild(el);
+    setTimeout(function () {
+      try { el.remove(); } catch (e) {}
+    }, 3200);
+  }
+
   function $(id) { return document.getElementById(id); }
   function esc(s) {
     return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
@@ -541,7 +559,9 @@
       : [["home", "Resumen"], ["myprops", "Mis props"], ["activity", "Actividad"]];
     $("nav").innerHTML = items.map(function (it) {
       var active = route === it[0] || (route === "edit" && it[0] === "inventory") || (route === "detail" && (it[0] === "inventory" || it[0] === "myprops"));
-      return '<button type="button" data-route="' + it[0] + '" class="' + (active ? "active" : "") + '">' + it[1] + "</button>";
+      return '<button type="button" data-route="' + it[0] + '"' +
+        (active ? ' class="active" aria-current="page"' : "") +
+        ' aria-label="' + it[1] + '">' + it[1] + "</button>";
     }).join("");
     $("nav").querySelectorAll("button").forEach(function (b) {
       b.onclick = function () { go(b.getAttribute("data-route")); };
@@ -984,7 +1004,7 @@
         publishToGitHub().then(function () {
           window.__nortSync.status = "synced";
           window.__nortSync.lastPub = new Date().toISOString();
-          alert("Guardado y publicado en el sitio");
+          toast("Guardado y publicado", "ok");
           if (goPublish) go("tools");
           else go("edit", data.id);
         }).catch(function (err) {
@@ -1012,7 +1032,7 @@
         rebuildCatalog();
         if (getGhToken()) {
           window.__nortQuietPub = true;
-          publishToGitHub().then(function(){ alert("Quitada y publicada"); go("inventory"); })
+          publishToGitHub().then(function(){ toast("Propiedad quitada y publicada", "ok"); go("inventory"); })
             .catch(function(){ alert("Quitada local. Publicá manualmente."); go("inventory"); });
         } else {
           alert("Quitada local. Configurá token en Publicar para auto-subir.");
@@ -1207,7 +1227,7 @@
         var token = getGhToken();
         if (token) {
           window.__nortQuietPub = true;
-          publishToGitHub().then(function () { alert("Asignación publicada"); renderOwners(); });
+          publishToGitHub().then(function () { toast("Asignación publicada", "ok"); renderOwners(); });
         } else {
           alert("Asignación guardada local. Publicá para sincronizar.");
           renderOwners();
@@ -1343,7 +1363,7 @@
     try {
       if (window.NORT_REALTIME) window.NORT_REALTIME.broadcastContent(payload);
     } catch (e) {}
-    if (!window.__nortQuietPub) alert("Publicado. Sincronización enviada — el sitio/equipo se actualiza al instante o en segundos.");
+    if (!window.__nortQuietPub) toast("Publicado y sincronizado", "ok");
     window.__nortQuietPub = false;
   }
 
@@ -1566,6 +1586,21 @@
 
   window.__nortSync = { lastPull: null, lastPub: null, status: "idle" };
 
+  function bindLoginKeys() {
+    ["loginUser","loginPass"].forEach(function (id) {
+      var el = $(id);
+      if (!el) return;
+      el.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          var b = $("loginBtn");
+          if (b) b.click();
+        }
+      });
+    });
+  }
+  // NORT_LOGIN_ENTER
+
   (async function boot() {
     await loadCatalog();
     var pull = await pullRemoteContent();
@@ -1600,6 +1635,7 @@
       }
     } catch (e) {}
     $("boot").hidden = true;
+    bindLoginKeys();
     if (currentUser()) showApp(); else showLogin();
   })();
 })();
