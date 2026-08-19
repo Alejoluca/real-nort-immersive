@@ -1,0 +1,2 @@
+[start]
+cmd = "node server/src/realtime-hub.js"
