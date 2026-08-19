@@ -1787,3 +1787,13 @@ body{
 .rn-stay-status.bad{color:#f5a524}
 
 .rn-card-mode{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(201,168,124,.9);margin:2px 0 0}
+
+
+/* nort premium a11y pass */
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+button:focus-visible,a:focus-visible,[role="button"]:focus-visible{
+  outline:2px solid var(--gold);outline-offset:3px
+}
+@media (prefers-reduced-motion: reduce){
+  .card,.btn,.chip,.tab,img{transition:none!important;animation:none!important}
+}
