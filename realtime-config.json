@@ -1,0 +1,5 @@
+{
+  "wsUrl": "",
+  "pollMs": 4000,
+  "note": "Pegá en wsUrl: wss://TU-SERVICIO.up.railway.app"
+}
