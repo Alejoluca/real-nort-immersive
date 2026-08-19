@@ -540,7 +540,14 @@
     saveState();
   }
 
-  function go(r, param) { route = r; routeParam = param || null; destroyCharts(); renderNav(); render(); }
+  function go(r, param) {
+    route = r; routeParam = param || null; destroyCharts(); renderNav();
+    if (window.NORT_FLIP && $("main") && !window.NORT_FLIP.reduced) {
+      window.NORT_FLIP.flipView($("main"), function () { render(); });
+    } else {
+      render();
+    }
+  }
 
   function showLogin() {
     destroyCharts(); $("boot").hidden = true; $("appView").hidden = true; $("loginView").hidden = false;
@@ -595,7 +602,7 @@
     var meta = ensureProp(p.id);
     var st = p.status || meta.status || "published";
     var img = (p.images && p.images[0]) ? String(p.images[0]).replace(/=w\d+/, "=w700") : "";
-    return '<article class="pcard">' +
+    return '<article class="pcard" data-flip-id="' + esc(p.id) + '">' +
       '<div class="pcard-media" style="background-image:url(\'' + esc(img) + '\')" data-open="' + esc(p.id) + '"></div><div class="pcard-body">' +
       '<div class="pcard-top"><h3 data-open="' + esc(p.id) + '">' + esc(p.name) + '</h3><span class="' + statusClass(st) + '">' + esc(st) + "</span></div>" +
       '<div class="meta">' + esc(p.loc || "") + " · " + esc(p.beds || "") + "</div>" +
@@ -1114,15 +1121,19 @@
     html += "</select></label></div><div class=\"grid-cards\">";
     list.forEach(function (p) { html += propCard(p); });
     html += "</div>";
+    var prevGrid = $("main") && $("main").querySelector(".grid-cards");
+    var firstMap = (prevGrid && window.NORT_FLIP) ? window.NORT_FLIP.capture(prevGrid) : null;
     $("main").innerHTML = html;
     bindPeriod(); bindCards();
-    $("btnNew").onclick = function () {
+    if ($("btnNew")) $("btnNew").onclick = function () {
       window.__editImgs = []; window.__editId = "__new__"; window.__editDraft = null;
       go("edit", "__new__");
     };
-    $("btnPub").onclick = function () { go("tools"); };
-    $("invSearch").oninput = function () { window.__invQ = this.value; renderInventory(); };
-    $("invSt").onchange = function () { window.__invSt = this.value; renderInventory(); };
+    if ($("btnPub")) $("btnPub").onclick = function () { go("tools"); };
+    if ($("invSearch")) $("invSearch").oninput = function () { window.__invQ = this.value; renderInventory(); };
+    if ($("invSt")) $("invSt").onchange = function () { window.__invSt = this.value; renderInventory(); };
+    var nextGrid = $("main").querySelector(".grid-cards");
+    if (nextGrid && firstMap && window.NORT_FLIP) window.NORT_FLIP.play(nextGrid, firstMap);
   }
 
   function renderMyProps() {
