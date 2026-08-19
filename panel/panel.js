@@ -282,6 +282,91 @@
   var routeParam = null;
   var user = null;
 
+
+  function assignPropsToOwner(ownerId, propIds) {
+    propIds = propIds || [];
+    var set = {};
+    propIds.forEach(function (id) { set[id] = true; });
+    // clear previous ownership for this owner on catalog props, then set selected
+    catalog.forEach(function (p) {
+      var meta = ensureProp(p.id);
+      if (meta.ownerId === ownerId && !set[p.id]) {
+        meta.ownerId = null;
+        content.props[p.id] = Object.assign({}, content.props[p.id] || {}, { ownerId: null });
+      }
+    });
+    propIds.forEach(function (pid) {
+      var meta = ensureProp(pid);
+      meta.ownerId = ownerId;
+      content.props[pid] = Object.assign({}, content.props[pid] || {}, { ownerId: ownerId });
+      // also on custom entries
+      (content.custom || []).forEach(function (c) {
+        if (c.id === pid) c.ownerId = ownerId;
+      });
+    });
+    saveState();
+    saveContent();
+    rebuildCatalog();
+  }
+
+  function syncUsersFromContent() {
+    if (!content.users || !content.users.length) return;
+    var byUser = {};
+    state.users.forEach(function (u) { byUser[u.username] = u; });
+    content.users.forEach(function (u) {
+      if (!u || !u.username) return;
+      var existing = state.users.find(function (x) { return x.id === u.id || x.username === u.username; });
+      if (existing) {
+        existing.name = u.name || existing.name;
+        existing.email = u.email || existing.email;
+        existing.phone = u.phone || existing.phone;
+        existing.role = u.role || existing.role;
+        existing.active = u.active !== false;
+        if (u.pass) existing.pass = u.pass;
+        if (u.id) existing.id = u.id;
+      } else if (u.role === "owner") {
+        state.users.push({
+          id: u.id || uid("own"),
+          username: u.username,
+          email: u.email || "",
+          phone: u.phone || "",
+          name: u.name || u.username,
+          role: "owner",
+          pass: u.pass || hash("changeme"),
+          active: u.active !== false
+        });
+      }
+    });
+    // apply ownerIds from content.props into state
+    Object.keys(content.props || {}).forEach(function (pid) {
+      var o = content.props[pid];
+      if (!o) return;
+      var meta = ensureProp(pid);
+      if (o.ownerId !== undefined) meta.ownerId = o.ownerId;
+      if (o.status) meta.status = o.status;
+      if (o.note !== undefined) meta.note = o.note;
+    });
+    saveState();
+  }
+
+  function publishableUsers() {
+    return state.users
+      .filter(function (u) { return u.role === "owner" || u.role === "admin"; })
+      .map(function (u) {
+        return {
+          id: u.id,
+          username: u.username,
+          email: u.email || "",
+          phone: u.phone || "",
+          name: u.name || u.username,
+          role: u.role,
+          pass: u.pass,
+          active: u.active !== false
+        };
+      });
+  }
+
+
   function ensureProp(id) {
     if (!state.props[id]) state.props[id] = { status: "published", ownerId: null, note: "" };
     return state.props[id];
@@ -298,9 +383,13 @@
     var meta = ensureProp(base.id);
     var m = {};
     for (var k in base) if (Object.prototype.hasOwnProperty.call(base, k)) m[k] = base[k];
-    for (var j in patch) if (patch[j] !== undefined && patch[j] !== null) m[j] = patch[j];
+    for (var j in patch) {
+      if (patch[j] === undefined) continue;
+      if (patch[j] === null && j !== "ownerId") continue;
+      m[j] = patch[j];
+    }
     if (!m.status) m.status = meta.status || "published";
-    if (meta.ownerId && !m.ownerId) m.ownerId = meta.ownerId;
+    if (m.ownerId == null && meta.ownerId) m.ownerId = meta.ownerId;
     if (meta.note && !m.note) m.note = meta.note;
     return m;
   }
@@ -1030,39 +1119,118 @@
 
   function renderOwners() {
     var owners = state.users.filter(function (u) { return u.role === "owner"; });
-    var html = '<div class="panel-block"><h2>Crear propietario</h2><div class="form-row">';
+    var html = '<div class="panel-block"><h2>Crear propietario</h2>';
+    html += '<p class="note">Creás la cuenta, asignás propiedades y publicás. El propietario solo ve esas unidades y sus métricas.</p>';
+    html += '<div class="form-row">';
     html += '<label>Nombre<input id="oName"/></label><label>Usuario<input id="oUser"/></label>';
     html += '<label>Email<input id="oEmail" type="email"/></label><label>Tel<input id="oPhone"/></label>';
-    html += '<label>Pass<input id="oPass" type="text"/></label></div>';
-    html += '<button class="btn gold" id="oCreate">Crear</button><pre id="oCreds" class="note" style="display:none;white-space:pre-wrap"></pre></div>';
-    html += '<p class="section-title">Directorio (' + owners.length + ')</p><div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Usuario</th><th>Props</th><th></th></tr></thead><tbody>';
-    owners.forEach(function (o) {
-      var n = catalog.filter(function (p) { return (ensureProp(p.id).ownerId || p.ownerId) === o.id; }).length;
-      html += "<tr><td>" + esc(o.name) + "</td><td>" + esc(o.username) + "</td><td>" + n + '</td><td><button class="btn danger sm" data-off="' + esc(o.id) + '">Off</button></td></tr>';
+    html += '<label>Contraseña<input id="oPass" type="text" placeholder="mín. 6"/></label></div>';
+    html += '<p class="section-title">Asignar propiedades</p>';
+    html += '<div class="prop-pick" id="oPropPick">';
+    catalog.forEach(function (p) {
+      html += '<label class="pick-row"><input type="checkbox" data-pid="' + esc(p.id) + '"/> <span>' + esc(p.name) + '</span><em>' + esc(p.loc || "") + '</em></label>';
     });
-    html += "</tbody></table></div>";
+    html += '</div>';
+    html += '<button class="btn gold" id="oCreate" style="margin-top:12px">Crear y asignar</button>';
+    html += '<pre id="oCreds" class="note" style="display:none;white-space:pre-wrap;margin-top:12px"></pre></div>';
+
+    html += '<p class="section-title">Directorio (' + owners.length + ')</p>';
+    owners.forEach(function (o) {
+      var props = catalog.filter(function (p) { return (ensureProp(p.id).ownerId || p.ownerId) === o.id; });
+      html += '<div class="panel-block owner-card" data-oid="' + esc(o.id) + '">';
+      html += '<div class="pcard-top"><h2 style="margin:0;font-size:16px">' + esc(o.name) + '</h2>';
+      html += '<span class="badge">' + (o.active !== false ? "activo" : "off") + '</span></div>';
+      html += '<p class="meta">@' + esc(o.username) + (o.email ? " · " + esc(o.email) : "") + (o.phone ? " · " + esc(o.phone) : "") + '</p>';
+      html += '<p class="meta">' + props.length + ' propiedades asignadas</p>';
+      html += '<div class="prop-pick" data-assign="' + esc(o.id) + '">';
+      catalog.forEach(function (p) {
+        var on = (ensureProp(p.id).ownerId || p.ownerId) === o.id;
+        html += '<label class="pick-row"><input type="checkbox" data-pid="' + esc(p.id) + '"' + (on ? " checked" : "") + '/> <span>' + esc(p.name) + '</span></label>';
+      });
+      html += '</div>';
+      html += '<div class="toolbar" style="margin-top:10px">';
+      html += '<button type="button" class="btn gold sm" data-save-own="' + esc(o.id) + '">Guardar asignación</button>';
+      html += '<button type="button" class="btn danger sm" data-off="' + esc(o.id) + '">Desactivar</button>';
+      html += '</div></div>';
+    });
+    if (!owners.length) html += '<div class="empty">Todavía no hay propietarios</div>';
+
     $("main").innerHTML = html;
+
     $("oCreate").onclick = function () {
       var username = $("oUser").value.trim().toLowerCase();
       var pass = $("oPass").value;
-      if (!username || pass.length < 6) return alert("Usuario + pass mín 6");
-      if (state.users.some(function (u) { return u.username === username; })) return alert("Existe");
+      if (!username || pass.length < 6) return alert("Usuario + contraseña (mín. 6)");
+      if (state.users.some(function (u) { return u.username === username; })) return alert("Usuario ya existe");
+      var id = uid("own");
       state.users.push({
-        id: uid("own"), username: username, email: $("oEmail").value.trim(), phone: $("oPhone").value.trim(),
+        id: id, username: username, email: $("oEmail").value.trim(), phone: $("oPhone").value.trim(),
         name: $("oName").value.trim() || username, role: "owner", pass: hash(pass), active: true
       });
+      var selected = [];
+      $("oPropPick").querySelectorAll("input[data-pid]:checked").forEach(function (cb) {
+        selected.push(cb.getAttribute("data-pid"));
+      });
       saveState();
+      assignPropsToOwner(id, selected);
+      content.users = publishableUsers();
+      saveContent();
       var box = $("oCreds"); box.style.display = "block";
-      box.textContent = "Usuario: " + username + "\nContraseña: " + pass + "\n" + location.origin + location.pathname;
-      renderOwners();
+      box.textContent = "Entregar al propietario:\n\nUsuario: " + username + "\nContraseña: " + pass +
+        "\nPanel: " + location.origin + location.pathname +
+        "\nPropiedades: " + selected.length +
+        "\n\nVerá solo esas unidades y métricas (solo lectura).";
+      var token = getGhToken();
+      if (token) {
+        window.__nortQuietPub = true;
+        publishToGitHub().then(function () {
+          box.textContent += "\n\n✓ Publicado — ya puede entrar desde cualquier dispositivo.";
+          renderOwners();
+        }).catch(function () { renderOwners(); });
+      } else {
+        alert("Propietario creado. Configurá token en Publicar para sincronizar con el equipo.");
+        renderOwners();
+      }
     };
+
+    $("main").querySelectorAll("[data-save-own]").forEach(function (btn) {
+      btn.onclick = function () {
+        var oid = btn.getAttribute("data-save-own");
+        var wrap = $("main").querySelector('[data-assign="' + oid + '"]');
+        var selected = [];
+        if (wrap) wrap.querySelectorAll("input[data-pid]:checked").forEach(function (cb) {
+          selected.push(cb.getAttribute("data-pid"));
+        });
+        assignPropsToOwner(oid, selected);
+        content.users = publishableUsers();
+        saveContent();
+        var token = getGhToken();
+        if (token) {
+          window.__nortQuietPub = true;
+          publishToGitHub().then(function () { alert("Asignación publicada"); renderOwners(); });
+        } else {
+          alert("Asignación guardada local. Publicá para sincronizar.");
+          renderOwners();
+        }
+      };
+    });
+
     $("main").querySelectorAll("[data-off]").forEach(function (b) {
       b.onclick = function () {
         var id = b.getAttribute("data-off");
         var u = state.users.find(function (x) { return x.id === id; });
         if (u) u.active = false;
-        Object.keys(state.props).forEach(function (pid) { if (state.props[pid].ownerId === id) state.props[pid].ownerId = null; });
-        saveState(); renderOwners();
+        catalog.forEach(function (p) {
+          var meta = ensureProp(p.id);
+          if (meta.ownerId === id) {
+            meta.ownerId = null;
+            content.props[p.id] = Object.assign({}, content.props[p.id] || {}, { ownerId: null });
+          }
+        });
+        content.users = publishableUsers();
+        saveState(); saveContent();
+        if (getGhToken()) { window.__nortQuietPub = true; publishToGitHub().then(function () { renderOwners(); }); }
+        else renderOwners();
       };
     });
   }
@@ -1092,8 +1260,11 @@
       updatedAt: new Date().toISOString(),
       deleted: content.deleted || [],
       props: content.props || {},
-      custom: content.custom || []
+      custom: content.custom || [],
+      users: publishableUsers()
     };
+    content.users = payload.users;
+    saveContent();
     var path = "content-overrides.json";
     var api = "https://api.github.com/repos/Alejoluca/real-nort-immersive/contents/" + path;
     var sha = null;
@@ -1318,10 +1489,12 @@
       content.props = remote.props || {};
       content.custom = remote.custom || [];
       content.deleted = remote.deleted || [];
+      content.users = remote.users || content.users || [];
       content.updatedAt = remote.updatedAt || content.updatedAt;
       content.version = remote.version || content.version || 1;
       content.livePreview = true;
       saveContent();
+      syncUsersFromContent();
       rebuildCatalog();
       return { ok: true, at: content.updatedAt, n: Object.keys(content.props || {}).length };
     } catch (e) {
