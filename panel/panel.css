@@ -438,3 +438,9 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{
 }
 .toast.ok{background:#0f9f6e}
 .toast.warn{background:#c4850a}
+
+/* FLIP */
+.pcard[data-flip-id]{transform:translateZ(0)}
+@media (prefers-reduced-motion: reduce){
+  .pcard[data-flip-id]{transition:none!important;transform:none!important}
+}
