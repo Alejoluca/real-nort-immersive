@@ -2,15 +2,21 @@
   "name": "nort-os-server",
   "private": true,
   "type": "module",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "node --watch src/index.js",
+    "start": "node src/realtime-hub.js",
+    "start:api": "node src/index.js",
+    "start:hub": "node src/realtime-hub.js",
+    "dev": "node --watch src/realtime-hub.js",
     "seed": "node src/seed.js"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "ws": "^8.18.0"
   }
 }
