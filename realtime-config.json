@@ -1,5 +1,7 @@
 {
-  "wsUrl": "",
+  "wsUrl": "wss://real-nort-immersive-production.up.railway.app",
   "pollMs": 4000,
-  "note": "Pegá en wsUrl: wss://TU-SERVICIO.up.railway.app"
+  "fastPollMs": 2500,
+  "healthUrl": "https://real-nort-immersive-production.up.railway.app/health",
+  "updatedAt": "2026-08-19T04:10:54Z"
 }
